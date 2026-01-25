@@ -1,0 +1,140 @@
+{
+    "when": [
+        {
+            "then": {
+                "when": [
+                    {
+                        "then": {
+                            "token": {
+                                "token_name": "ETH",
+                                "currency_symbol": "test::mock_eth::ETH"
+                            },
+                            "to": {
+                                "party": {
+                                    "role_token": "USDC provider"
+                                }
+                            },
+                            "then": {
+                                "token": {
+                                    "token_name": "USDC",
+                                    "currency_symbol": "test::mock_usdc::USDC"
+                                },
+                                "to": {
+                                    "party": {
+                                        "role_token": "ETH provider"
+                                    }
+                                },
+                                "then": "close",
+                                "pay": 3000000000,
+                                "from_account": {
+                                    "role_token": "USDC provider"
+                                }
+                            },
+                            "pay": 1500000000,
+                            "from_account": {
+                                "role_token": "ETH provider"
+                            }
+                        },
+                        "case": {
+                            "party": {
+                                "role_token": "USDC provider"
+                            },
+                            "of_token": {
+                                "token_name": "USDC",
+                                "currency_symbol": "test::mock_usdc::USDC"
+                            },
+                            "into_account": {
+                                "role_token": "USDC provider"
+                            },
+                            "deposits": 3000000000
+                        }
+                    }
+                ],
+                "timeout_continuation": "close",
+                "timeout": 1759802243665
+            },
+            "case": {
+                "party": {
+                    "role_token": "ETH provider"
+                },
+                "of_token": {
+                    "token_name": "ETH",
+                    "currency_symbol": "test::mock_eth::ETH"
+                },
+                "into_account": {
+                    "role_token": "ETH provider"
+                },
+                "deposits": 1500000000
+            }
+        },
+        {
+            "then": {
+                "when": [
+                    {
+                        "then": {
+                            "token": {
+                                "token_name": "ETH",
+                                "currency_symbol": "test::mock_eth::ETH"
+                            },
+                            "to": {
+                                "party": {
+                                    "role_token": "USDC provider"
+                                }
+                            },
+                            "then": {
+                                "token": {
+                                    "token_name": "USDC",
+                                    "currency_symbol": "test::mock_usdc::USDC"
+                                },
+                                "to": {
+                                    "party": {
+                                        "role_token": "ETH provider"
+                                    }
+                                },
+                                "then": "close",
+                                "pay": 3000000000,
+                                "from_account": {
+                                    "role_token": "USDC provider"
+                                }
+                            },
+                            "pay": 1500000000,
+                            "from_account": {
+                                "role_token": "ETH provider"
+                            }
+                        },
+                        "case": {
+                            "party": {
+                                "role_token": "ETH provider"
+                            },
+                            "of_token": {
+                                "token_name": "ETH",
+                                "currency_symbol": "test::mock_eth::ETH"
+                            },
+                            "into_account": {
+                                "role_token": "ETH provider"
+                            },
+                            "deposits": 1500000000
+                        }
+                    }
+                ],
+                "timeout_continuation": "close",
+                "timeout": 1759802243665
+            },
+            "case": {
+                "party": {
+                    "role_token": "USDC provider"
+                },
+                "of_token": {
+                    "token_name": "USDC",
+                    "currency_symbol": "test::mock_usdc::USDC"
+                },
+                "into_account": {
+                    "role_token": "USDC provider"
+                },
+                "deposits": 3000000000
+            }
+        }
+    ],
+    "timeout_continuation": "close",
+    "timeout": 1759800443665
+}

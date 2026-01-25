@@ -66,7 +66,7 @@ def generate_automation_tail(next_stage: int, stage_lookup: StageLookup) -> str:
 # -----------------------------------------------------------------
 # 3. Move 模組和輔助函式 (Boilerplate)
 # -----------------------------------------------------------------
-def generate_module_header(infos: Dict[str, List[Any]], token_type: str, token_name_bytes: str) -> str:
+def generate_module_header(infos: Dict[str, List[Any]], token_type: str, token_name_bytes: str, module_name: str = "generated_marlowe") -> str:
     """產生 Move 模組標頭，包含狀態讀取 Helper"""
 
     pay_has_roles = any(p.to.startswith("Role(") or p.from_account.startswith("Role(") for p in infos.get("pay", []))
@@ -110,7 +110,7 @@ def generate_module_header(infos: Dict[str, List[Any]], token_type: str, token_n
     """ if has_roles else ""
 
     return f"""
-module test::generated_marlowe {{
+module test::{module_name} {{
     use sui::coin::{{Self, Coin}};
     use sui::table::{{Self, Table}};
     use sui::bag::{{Self, Bag}};
@@ -660,7 +660,7 @@ def generate_choice_function(choice: ChoiceStageInfo, stage_lookup: StageLookup)
         }};
     """
 
-    sig_params.append("_ctx: &mut TxContext")
+    sig_params.append("ctx: &mut TxContext")
     automation_tail = generate_automation_tail(choice.next_stage, stage_lookup)
 
     return f"""
@@ -1087,13 +1087,13 @@ def extract_token_name(token_type: str) -> str:
         return token_type.split("::")[-1]
     return token_type
 
-def generate_module(infos: Dict[str, List[Any]], stage_lookup: StageLookup) -> str:
+def generate_module(infos: Dict[str, List[Any]], stage_lookup: StageLookup, module_name: str = "generated_marlowe") -> str:
     """整合所有 function 生成一個 Move module"""
 
     token_type = get_contract_token_type(infos)
     token_name_simple = extract_token_name(token_type) # e.g. "SUI" or "USDC"
     
-    header = generate_module_header(infos, token_type, token_name_simple)
+    header = generate_module_header(infos, token_type, token_name_simple, module_name)
     body = ""
 
     # Generate functions based on the order they appear in infos keys

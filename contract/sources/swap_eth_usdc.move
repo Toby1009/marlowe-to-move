@@ -1,5 +1,5 @@
 
-module test::swap_ada {
+module test::swap_eth_usdc {
     use sui::coin::{Self, Coin};
     use sui::table::{Self, Table};
     use sui::bag::{Self, Bag};
@@ -395,15 +395,15 @@ module test::swap_ada {
         internal_pay<T>(contract, party_key, caller, amount, ctx);
     }
 
-    /// @dev Stage 1 / Case 0: Role(Dollar provider) 存款
+    /// @dev Stage 1 / Case 0: Role(USDC provider) 存款
     public fun deposit_stage_1_case_0(
-        contract: &mut Contract, role_nft: &RoleNFT, deposit_coin: Coin<test::mock_dollar::DOLLAR>, ctx: &mut TxContext
+        contract: &mut Contract, role_nft: &RoleNFT, deposit_coin: Coin<test::mock_usdc::USDC>, ctx: &mut TxContext
     ) {
         // 1. 驗證
-        assert!(contract.stage == 1, E_WRONG_STAGE);        assert!(coin::value(&deposit_coin) == internal_eval(contract, vector[2, 0, 0, 0, 0, 0, 0, 0, 0], ctx), E_WRONG_AMOUNT);        assert!(tx_context::epoch_timestamp_ms(ctx) < 1759802243665, E_TIMEOUT_PASSED);        assert_role(contract, role_nft, string::utf8(b"Dollar provider"));
+        assert!(contract.stage == 1, E_WRONG_STAGE);        assert!(coin::value(&deposit_coin) == internal_eval(contract, vector[2, 0, 0, 0, 0, 178, 208, 94, 0], ctx), E_WRONG_AMOUNT);        assert!(tx_context::epoch_timestamp_ms(ctx) < 1759802243665, E_TIMEOUT_PASSED);        assert_role(contract, role_nft, string::utf8(b"USDC provider"));
 
         // 2. 執行存款
-        internal_deposit<test::mock_dollar::DOLLAR>(contract, string::utf8(b"Role(Dollar provider)"), deposit_coin, ctx);
+        internal_deposit<test::mock_usdc::USDC>(contract, string::utf8(b"Role(USDC provider)"), deposit_coin, ctx);
         // 3. 推進狀態機
         
         // 自動呼叫鏈：執行下一個自動 stage
@@ -412,15 +412,15 @@ module test::swap_ada {
 
     }
 
-    /// @dev Stage 6 / Case 0: Role(Dollar provider) 存款
+    /// @dev Stage 6 / Case 0: Role(ETH provider) 存款
     public fun deposit_stage_6_case_0(
-        contract: &mut Contract, role_nft: &RoleNFT, deposit_coin: Coin<test::mock_dollar::DOLLAR>, ctx: &mut TxContext
+        contract: &mut Contract, role_nft: &RoleNFT, deposit_coin: Coin<test::mock_eth::ETH>, ctx: &mut TxContext
     ) {
         // 1. 驗證
-        assert!(contract.stage == 6, E_WRONG_STAGE);        assert!(coin::value(&deposit_coin) == internal_eval(contract, vector[2, 0, 0, 0, 0, 0, 0, 0, 0], ctx), E_WRONG_AMOUNT);        assert!(tx_context::epoch_timestamp_ms(ctx) < 1759802243665, E_TIMEOUT_PASSED);        assert_role(contract, role_nft, string::utf8(b"Dollar provider"));
+        assert!(contract.stage == 6, E_WRONG_STAGE);        assert!(coin::value(&deposit_coin) == internal_eval(contract, vector[2, 0, 0, 0, 0, 89, 104, 47, 0], ctx), E_WRONG_AMOUNT);        assert!(tx_context::epoch_timestamp_ms(ctx) < 1759802243665, E_TIMEOUT_PASSED);        assert_role(contract, role_nft, string::utf8(b"ETH provider"));
 
         // 2. 執行存款
-        internal_deposit<test::mock_dollar::DOLLAR>(contract, string::utf8(b"Role(Dollar provider)"), deposit_coin, ctx);
+        internal_deposit<test::mock_eth::ETH>(contract, string::utf8(b"Role(ETH provider)"), deposit_coin, ctx);
         // 3. 推進狀態機
         
         // 自動呼叫鏈：執行下一個自動 stage
@@ -429,15 +429,15 @@ module test::swap_ada {
 
     }
 
-    /// @dev Stage 0 / Case 0: Role(Ada provider) 存款
+    /// @dev Stage 0 / Case 0: Role(ETH provider) 存款
     public fun deposit_stage_0_case_0(
-        contract: &mut Contract, role_nft: &RoleNFT, deposit_coin: Coin<sui::sui::SUI>, ctx: &mut TxContext
+        contract: &mut Contract, role_nft: &RoleNFT, deposit_coin: Coin<test::mock_eth::ETH>, ctx: &mut TxContext
     ) {
         // 1. 驗證
-        assert!(contract.stage == 0, E_WRONG_STAGE);        assert!(coin::value(&deposit_coin) == internal_eval(contract, vector[2, 0, 0, 0, 0, 0, 15, 66, 64, 2, 0, 0, 0, 0, 0, 0, 0, 0, 5], ctx), E_WRONG_AMOUNT);        assert!(tx_context::epoch_timestamp_ms(ctx) < 1759800443665, E_TIMEOUT_PASSED);        assert_role(contract, role_nft, string::utf8(b"Ada provider"));
+        assert!(contract.stage == 0, E_WRONG_STAGE);        assert!(coin::value(&deposit_coin) == internal_eval(contract, vector[2, 0, 0, 0, 0, 89, 104, 47, 0], ctx), E_WRONG_AMOUNT);        assert!(tx_context::epoch_timestamp_ms(ctx) < 1759800443665, E_TIMEOUT_PASSED);        assert_role(contract, role_nft, string::utf8(b"ETH provider"));
 
         // 2. 執行存款
-        internal_deposit<sui::sui::SUI>(contract, string::utf8(b"Role(Ada provider)"), deposit_coin, ctx);
+        internal_deposit<test::mock_eth::ETH>(contract, string::utf8(b"Role(ETH provider)"), deposit_coin, ctx);
         // 3. 推進狀態機
         
         // 結束：更新 stage 並等待下一個交易
@@ -445,15 +445,15 @@ module test::swap_ada {
     
     }
 
-    /// @dev Stage 0 / Case 1: Role(Ada provider) 存款
+    /// @dev Stage 0 / Case 1: Role(USDC provider) 存款
     public fun deposit_stage_0_case_1(
-        contract: &mut Contract, role_nft: &RoleNFT, deposit_coin: Coin<sui::sui::SUI>, ctx: &mut TxContext
+        contract: &mut Contract, role_nft: &RoleNFT, deposit_coin: Coin<test::mock_usdc::USDC>, ctx: &mut TxContext
     ) {
         // 1. 驗證
-        assert!(contract.stage == 0, E_WRONG_STAGE);        assert!(coin::value(&deposit_coin) == internal_eval(contract, vector[2, 0, 0, 0, 0, 0, 15, 66, 64, 2, 0, 0, 0, 0, 0, 0, 0, 0, 5], ctx), E_WRONG_AMOUNT);        assert!(tx_context::epoch_timestamp_ms(ctx) < 1759800443665, E_TIMEOUT_PASSED);        assert_role(contract, role_nft, string::utf8(b"Ada provider"));
+        assert!(contract.stage == 0, E_WRONG_STAGE);        assert!(coin::value(&deposit_coin) == internal_eval(contract, vector[2, 0, 0, 0, 0, 178, 208, 94, 0], ctx), E_WRONG_AMOUNT);        assert!(tx_context::epoch_timestamp_ms(ctx) < 1759800443665, E_TIMEOUT_PASSED);        assert_role(contract, role_nft, string::utf8(b"USDC provider"));
 
         // 2. 執行存款
-        internal_deposit<sui::sui::SUI>(contract, string::utf8(b"Role(Ada provider)"), deposit_coin, ctx);
+        internal_deposit<test::mock_usdc::USDC>(contract, string::utf8(b"Role(USDC provider)"), deposit_coin, ctx);
         // 3. 推進狀態機
         
         // 結束：更新 stage 並等待下一個交易
@@ -521,7 +521,7 @@ module test::swap_ada {
     
     }
 
-    /// @dev Stage 2: 自動支付 (from Role(Ada provider) to Party(Role(Dollar provider)))
+    /// @dev Stage 2: 自動支付 (from Role(ETH provider) to Party(Role(USDC provider)))
     fun internal_pay_stage_2(
         contract: &mut Contract,
         ctx: &mut TxContext
@@ -531,16 +531,16 @@ module test::swap_ada {
 
         // 2. 求值/查找收款人
         // 2. 求值/查找收款人
-        let amount = internal_eval(contract, vector[2, 0, 0, 0, 0, 0, 15, 66, 64, 2, 0, 0, 0, 0, 0, 0, 0, 0, 5], ctx);
-        let from_party_id = string::utf8(b"Role(Ada provider)");
+        let amount = internal_eval(contract, vector[2, 0, 0, 0, 0, 89, 104, 47, 0], ctx);
+        let from_party_id = string::utf8(b"Role(ETH provider)");
         
         // 從註冊表查找 Role 的地址
-        assert!(table::contains(&contract.role_registry, string::utf8(b"Dollar provider")), E_ROLE_NOT_FOUND);
-        let receiver_addr = *table::borrow(&contract.role_registry, string::utf8(b"Dollar provider"));
+        assert!(table::contains(&contract.role_registry, string::utf8(b"USDC provider")), E_ROLE_NOT_FOUND);
+        let receiver_addr = *table::borrow(&contract.role_registry, string::utf8(b"USDC provider"));
         
 
         // 3. 執行支付
-        internal_pay<sui::sui::SUI>(contract, from_party_id, receiver_addr, amount, ctx);
+        internal_pay<test::mock_eth::ETH>(contract, from_party_id, receiver_addr, amount, ctx);
 
         // 4. 推進狀態機
         
@@ -550,7 +550,7 @@ module test::swap_ada {
 
     }
 
-    /// @dev Stage 3: 自動支付 (from Role(Dollar provider) to Party(Role(Ada provider)))
+    /// @dev Stage 3: 自動支付 (from Role(USDC provider) to Party(Role(ETH provider)))
     fun internal_pay_stage_3(
         contract: &mut Contract,
         ctx: &mut TxContext
@@ -560,16 +560,16 @@ module test::swap_ada {
 
         // 2. 求值/查找收款人
         // 2. 求值/查找收款人
-        let amount = internal_eval(contract, vector[2, 0, 0, 0, 0, 0, 0, 0, 0], ctx);
-        let from_party_id = string::utf8(b"Role(Dollar provider)");
+        let amount = internal_eval(contract, vector[2, 0, 0, 0, 0, 178, 208, 94, 0], ctx);
+        let from_party_id = string::utf8(b"Role(USDC provider)");
         
         // 從註冊表查找 Role 的地址
-        assert!(table::contains(&contract.role_registry, string::utf8(b"Ada provider")), E_ROLE_NOT_FOUND);
-        let receiver_addr = *table::borrow(&contract.role_registry, string::utf8(b"Ada provider"));
+        assert!(table::contains(&contract.role_registry, string::utf8(b"ETH provider")), E_ROLE_NOT_FOUND);
+        let receiver_addr = *table::borrow(&contract.role_registry, string::utf8(b"ETH provider"));
         
 
         // 3. 執行支付
-        internal_pay<test::mock_dollar::DOLLAR>(contract, from_party_id, receiver_addr, amount, ctx);
+        internal_pay<test::mock_usdc::USDC>(contract, from_party_id, receiver_addr, amount, ctx);
 
         // 4. 推進狀態機
         
@@ -578,7 +578,7 @@ module test::swap_ada {
     
     }
 
-    /// @dev Stage 7: 自動支付 (from Role(Ada provider) to Party(Role(Dollar provider)))
+    /// @dev Stage 7: 自動支付 (from Role(ETH provider) to Party(Role(USDC provider)))
     fun internal_pay_stage_7(
         contract: &mut Contract,
         ctx: &mut TxContext
@@ -588,16 +588,16 @@ module test::swap_ada {
 
         // 2. 求值/查找收款人
         // 2. 求值/查找收款人
-        let amount = internal_eval(contract, vector[2, 0, 0, 0, 0, 0, 15, 66, 64, 2, 0, 0, 0, 0, 0, 0, 0, 0, 5], ctx);
-        let from_party_id = string::utf8(b"Role(Ada provider)");
+        let amount = internal_eval(contract, vector[2, 0, 0, 0, 0, 89, 104, 47, 0], ctx);
+        let from_party_id = string::utf8(b"Role(ETH provider)");
         
         // 從註冊表查找 Role 的地址
-        assert!(table::contains(&contract.role_registry, string::utf8(b"Dollar provider")), E_ROLE_NOT_FOUND);
-        let receiver_addr = *table::borrow(&contract.role_registry, string::utf8(b"Dollar provider"));
+        assert!(table::contains(&contract.role_registry, string::utf8(b"USDC provider")), E_ROLE_NOT_FOUND);
+        let receiver_addr = *table::borrow(&contract.role_registry, string::utf8(b"USDC provider"));
         
 
         // 3. 執行支付
-        internal_pay<sui::sui::SUI>(contract, from_party_id, receiver_addr, amount, ctx);
+        internal_pay<test::mock_eth::ETH>(contract, from_party_id, receiver_addr, amount, ctx);
 
         // 4. 推進狀態機
         
@@ -607,7 +607,7 @@ module test::swap_ada {
 
     }
 
-    /// @dev Stage 8: 自動支付 (from Role(Dollar provider) to Party(Role(Ada provider)))
+    /// @dev Stage 8: 自動支付 (from Role(USDC provider) to Party(Role(ETH provider)))
     fun internal_pay_stage_8(
         contract: &mut Contract,
         ctx: &mut TxContext
@@ -617,16 +617,16 @@ module test::swap_ada {
 
         // 2. 求值/查找收款人
         // 2. 求值/查找收款人
-        let amount = internal_eval(contract, vector[2, 0, 0, 0, 0, 0, 0, 0, 0], ctx);
-        let from_party_id = string::utf8(b"Role(Dollar provider)");
+        let amount = internal_eval(contract, vector[2, 0, 0, 0, 0, 178, 208, 94, 0], ctx);
+        let from_party_id = string::utf8(b"Role(USDC provider)");
         
         // 從註冊表查找 Role 的地址
-        assert!(table::contains(&contract.role_registry, string::utf8(b"Ada provider")), E_ROLE_NOT_FOUND);
-        let receiver_addr = *table::borrow(&contract.role_registry, string::utf8(b"Ada provider"));
+        assert!(table::contains(&contract.role_registry, string::utf8(b"ETH provider")), E_ROLE_NOT_FOUND);
+        let receiver_addr = *table::borrow(&contract.role_registry, string::utf8(b"ETH provider"));
         
 
         // 3. 執行支付
-        internal_pay<test::mock_dollar::DOLLAR>(contract, from_party_id, receiver_addr, amount, ctx);
+        internal_pay<test::mock_usdc::USDC>(contract, from_party_id, receiver_addr, amount, ctx);
 
         // 4. 推進狀態機
         

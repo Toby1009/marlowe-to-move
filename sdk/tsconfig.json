@@ -10,7 +10,7 @@
     "outDir": "./dist"
   },
   "include": [
-    "sdk/**/*.ts"
+    "**/*.ts"
   ],
   "exclude": [
     "node_modules"

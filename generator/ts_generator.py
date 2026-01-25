@@ -3,7 +3,7 @@ from typing import Dict, List, Any
 from fsm_model import ChoiceStageInfo, DepositStageInfo, NotifyStageInfo
 from move_generator import parse_party_str
 
-def generate_ts_sdk(infos: Dict[str, List[Any]], deployment_path: str = "deployment.json") -> str:
+def generate_ts_sdk(infos: Dict[str, List[Any]], deployment_path: str = "deployment.json", module_name: str = "generated_marlowe") -> str:
     # 1. Load Deployment Config
     try:
         with open(deployment_path, "r") as f:
@@ -25,7 +25,7 @@ export const CONTRACT_ID = "{contract_id}";
 export class MarloweContract {{
     packageId: string;
     contractId: string;
-    moduleId: string = "generated_marlowe";
+    moduleId: string = "{module_name}";
 
     constructor(packageId: string = PACKAGE_ID, contractId: string = CONTRACT_ID) {{
         this.packageId = packageId;

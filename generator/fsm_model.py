@@ -31,33 +31,45 @@ from parser import parse_contract
 # --------------------------
 # (NEW) Token Type Mapping Helper
 # --------------------------
+
+# Global Token Map configuration
+# This can be expanded to include Mainnet addresses.
+TOKEN_MAP = {
+    ":": "sui::sui::SUI",
+    "0x2::sui::SUI:SUI": "sui::sui::SUI", # Explicit
+    # Mapping for Swap ADA spec (Mock Dollar)
+    "85bb65085bb65085bb65085bb65085bb65085bb65085bb65085bb650:dollar": "test::mock_dollar::DOLLAR",
+    # Mocks for ETH/USDC
+    "test::mock_eth::ETH:ETH": "test::mock_eth::ETH",
+    "test::mock_usdc::USDC:USDC": "test::mock_usdc::USDC"
+}
+
 def marlowe_token_to_move_type(token_info: Dict[str, str]) -> str:
     """
     Converts Marlowe Token JSON representation to a Sui Move type string.
-    Makes assumptions about the mapping:
-    - Empty symbol/name -> SUI
-    - Non-empty symbol is package::module ID, name is Struct name
+    Priority:
+    1. Lookup in TOKEN_MAP (Key = "symbol:name")
+    2. Pass-through if symbol looks like a Move type (contains "::")
+    3. Fallback/Error
     """
     currency_symbol = token_info.get("currency_symbol", "")
     token_name = token_info.get("token_name", "")
+    
+    # 1. Map Lookup
+    map_key = f"{currency_symbol}:{token_name}"
+    if map_key in TOKEN_MAP:
+        return TOKEN_MAP[map_key]
+        
+    # 2. Heuristic: If symbol is already a fully qualified Move type
+    if "::" in currency_symbol:
+         return currency_symbol
 
+    # 3. Fallback / Hardcoded Assumptions
     if not currency_symbol and not token_name:
         return "sui::sui::SUI"
-    elif currency_symbol and token_name:
-        # Hack for swap_ada.json: Map specific Cardano Policy ID to local Mock
-        if currency_symbol.startswith("85bb650"):
-             return "test::mock_dollar::DOLLAR"
-        
-        # Generic mapping (requires valid Move address hex)
-        move_struct_name = token_name.upper()
-        # Default behavior: assume currency_symbol is "package", name is Module, Struct is NAME (or similar)
-        # But for now, let's just return what we have if it looks like package::mod::Struct
-        if "::" in currency_symbol:
-             return currency_symbol
-        return f"{currency_symbol}::{move_struct_name}::{move_struct_name}" # Guess pattern
-    else:
-        print(f"Warning: Could not map Marlowe token to Move type: {token_info}")
-        return "ERROR_UNKNOWN_TOKEN_TYPE"
+
+    print(f"Warning: Could not map Marlowe token to Move type: {token_info}")
+    return "ERROR_UNKNOWN_TOKEN_TYPE"
 
 
 # --------------------------

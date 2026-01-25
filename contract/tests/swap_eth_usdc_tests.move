@@ -4,7 +4,7 @@ module test::contract_tests {
     use sui::test_scenario;
     use sui::coin;
     use std::option;
-    use test::generated_marlowe::{Self, Contract, RoleNFT};
+    use test::swap_eth_usdc::{Self, Contract, RoleNFT};
 
     #[test]
     fun test_happy_path() {
@@ -16,7 +16,7 @@ module test::contract_tests {
         
         // 1. Initialize Contract
         {
-            generated_marlowe::init_for_testing(test_scenario::ctx(scenario));
+            swap_eth_usdc::init_for_testing(test_scenario::ctx(scenario));
         };
         test_scenario::next_tx(scenario, admin);
         
@@ -33,7 +33,7 @@ module test::contract_tests {
 
         // TODO: Mint Roles and interact with stages
         // Use test_scenario::take_shared<Contract>(scenario) to get contract
-        // Call generated_marlowe::choice_... or deposit_...
+        // Call swap_eth_usdc::choice_... or deposit_...
         
         test_scenario::end(scenario_val);
     }

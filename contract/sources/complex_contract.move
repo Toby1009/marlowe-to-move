@@ -1,5 +1,5 @@
 
-module test::swap_ada {
+module test::complex_contract {
     use sui::coin::{Self, Coin};
     use sui::table::{Self, Table};
     use sui::bag::{Self, Bag};
@@ -395,49 +395,22 @@ module test::swap_ada {
         internal_pay<T>(contract, party_key, caller, amount, ctx);
     }
 
-    /// @dev Stage 1 / Case 0: Role(Dollar provider) 存款
-    public fun deposit_stage_1_case_0(
-        contract: &mut Contract, role_nft: &RoleNFT, deposit_coin: Coin<test::mock_dollar::DOLLAR>, ctx: &mut TxContext
+    /// @dev Stage 0 / Case 0: Choice pick_number by Role(Oracle)
+    public fun choice_stage_0_case_0(
+        contract: &mut Contract, role_nft: &RoleNFT, chosen_num: u64, ctx: &mut TxContext
     ) {
         // 1. 驗證
-        assert!(contract.stage == 1, E_WRONG_STAGE);        assert!(coin::value(&deposit_coin) == internal_eval(contract, vector[2, 0, 0, 0, 0, 0, 0, 0, 0], ctx), E_WRONG_AMOUNT);        assert!(tx_context::epoch_timestamp_ms(ctx) < 1759802243665, E_TIMEOUT_PASSED);        assert_role(contract, role_nft, string::utf8(b"Dollar provider"));
+        assert!(contract.stage == 0, E_WRONG_STAGE);        assert!(tx_context::epoch_timestamp_ms(ctx) < 1999999999000, E_TIMEOUT_PASSED);        assert_role(contract, role_nft, string::utf8(b"Oracle"));        assert!((chosen_num >= 1 && chosen_num <= 10), E_INVALID_CHOICE);
 
-        // 2. 執行存款
-        internal_deposit<test::mock_dollar::DOLLAR>(contract, string::utf8(b"Role(Dollar provider)"), deposit_coin, ctx);
-        // 3. 推進狀態機
+        // 2. 記錄 Choice
         
-        // 自動呼叫鏈：執行下一個自動 stage
-        contract.stage = 2;
-        internal_pay_stage_2(contract, ctx);
+        if (table::contains(&contract.choices, string::utf8(b"pick_number:Role(Oracle)"))) {
+            *table::borrow_mut(&mut contract.choices, string::utf8(b"pick_number:Role(Oracle)")) = chosen_num;
+        } else {
+            table::add(&mut contract.choices, string::utf8(b"pick_number:Role(Oracle)"), chosen_num);
+        };
+    
 
-    }
-
-    /// @dev Stage 6 / Case 0: Role(Dollar provider) 存款
-    public fun deposit_stage_6_case_0(
-        contract: &mut Contract, role_nft: &RoleNFT, deposit_coin: Coin<test::mock_dollar::DOLLAR>, ctx: &mut TxContext
-    ) {
-        // 1. 驗證
-        assert!(contract.stage == 6, E_WRONG_STAGE);        assert!(coin::value(&deposit_coin) == internal_eval(contract, vector[2, 0, 0, 0, 0, 0, 0, 0, 0], ctx), E_WRONG_AMOUNT);        assert!(tx_context::epoch_timestamp_ms(ctx) < 1759802243665, E_TIMEOUT_PASSED);        assert_role(contract, role_nft, string::utf8(b"Dollar provider"));
-
-        // 2. 執行存款
-        internal_deposit<test::mock_dollar::DOLLAR>(contract, string::utf8(b"Role(Dollar provider)"), deposit_coin, ctx);
-        // 3. 推進狀態機
-        
-        // 自動呼叫鏈：執行下一個自動 stage
-        contract.stage = 7;
-        internal_pay_stage_7(contract, ctx);
-
-    }
-
-    /// @dev Stage 0 / Case 0: Role(Ada provider) 存款
-    public fun deposit_stage_0_case_0(
-        contract: &mut Contract, role_nft: &RoleNFT, deposit_coin: Coin<sui::sui::SUI>, ctx: &mut TxContext
-    ) {
-        // 1. 驗證
-        assert!(contract.stage == 0, E_WRONG_STAGE);        assert!(coin::value(&deposit_coin) == internal_eval(contract, vector[2, 0, 0, 0, 0, 0, 15, 66, 64, 2, 0, 0, 0, 0, 0, 0, 0, 0, 5], ctx), E_WRONG_AMOUNT);        assert!(tx_context::epoch_timestamp_ms(ctx) < 1759800443665, E_TIMEOUT_PASSED);        assert_role(contract, role_nft, string::utf8(b"Ada provider"));
-
-        // 2. 執行存款
-        internal_deposit<sui::sui::SUI>(contract, string::utf8(b"Role(Ada provider)"), deposit_coin, ctx);
         // 3. 推進狀態機
         
         // 結束：更新 stage 並等待下一個交易
@@ -445,63 +418,21 @@ module test::swap_ada {
     
     }
 
-    /// @dev Stage 0 / Case 1: Role(Ada provider) 存款
-    public fun deposit_stage_0_case_1(
-        contract: &mut Contract, role_nft: &RoleNFT, deposit_coin: Coin<sui::sui::SUI>, ctx: &mut TxContext
+    /// @dev Stage 0 / Case 1: Notify
+    public fun notify_stage_0_case_1(
+        contract: &mut Contract, ctx: &mut TxContext
     ) {
         // 1. 驗證
-        assert!(contract.stage == 0, E_WRONG_STAGE);        assert!(coin::value(&deposit_coin) == internal_eval(contract, vector[2, 0, 0, 0, 0, 0, 15, 66, 64, 2, 0, 0, 0, 0, 0, 0, 0, 0, 5], ctx), E_WRONG_AMOUNT);        assert!(tx_context::epoch_timestamp_ms(ctx) < 1759800443665, E_TIMEOUT_PASSED);        assert_role(contract, role_nft, string::utf8(b"Ada provider"));
+        assert!(contract.stage == 0, E_WRONG_STAGE);        assert!(internal_eval(contract, vector[2, 0, 0, 0, 0, 0, 0, 0, 1], ctx) == 1, E_ASSERT_FAILED);        assert!(tx_context::epoch_timestamp_ms(ctx) < 1999999999000, E_TIMEOUT_PASSED);
 
-        // 2. 執行存款
-        internal_deposit<sui::sui::SUI>(contract, string::utf8(b"Role(Ada provider)"), deposit_coin, ctx);
-        // 3. 推進狀態機
+        // 2. 推進狀態機
         
         // 結束：更新 stage 並等待下一個交易
-       contract.stage = 6;
+       contract.stage = 2;
     
     }
 
-    /// @dev Stage 1: 處理超時 (Timeout: 1759802243665)
-    public fun timeout_stage_1(
-        contract: &mut Contract,
-        ctx: &mut TxContext
-    ) {
-        // 1. 驗證 Stage
-        assert!(contract.stage == 1, E_WRONG_STAGE);
-
-        // 2. 驗證時間 (必須 *超過* timeout 才能執行)
-        // 使用 Sui 的 TxContext 獲取當前時間 (epoch timestamp)
-        let current_time = tx_context::epoch_timestamp_ms(ctx);
-        assert!(current_time >= 1759802243665, E_TIMEOUT_NOT_YET);
-
-        // 3. 推進狀態機 (進入 timeout_continuation)
-        
-        // 結束：更新 stage 並等待下一個交易
-       contract.stage = 5;
-    
-    }
-
-    /// @dev Stage 6: 處理超時 (Timeout: 1759802243665)
-    public fun timeout_stage_6(
-        contract: &mut Contract,
-        ctx: &mut TxContext
-    ) {
-        // 1. 驗證 Stage
-        assert!(contract.stage == 6, E_WRONG_STAGE);
-
-        // 2. 驗證時間 (必須 *超過* timeout 才能執行)
-        // 使用 Sui 的 TxContext 獲取當前時間 (epoch timestamp)
-        let current_time = tx_context::epoch_timestamp_ms(ctx);
-        assert!(current_time >= 1759802243665, E_TIMEOUT_NOT_YET);
-
-        // 3. 推進狀態機 (進入 timeout_continuation)
-        
-        // 結束：更新 stage 並等待下一個交易
-       contract.stage = 10;
-    
-    }
-
-    /// @dev Stage 0: 處理超時 (Timeout: 1759800443665)
+    /// @dev Stage 0: 處理超時 (Timeout: 1999999999000)
     public fun timeout_stage_0(
         contract: &mut Contract,
         ctx: &mut TxContext
@@ -512,178 +443,42 @@ module test::swap_ada {
         // 2. 驗證時間 (必須 *超過* timeout 才能執行)
         // 使用 Sui 的 TxContext 獲取當前時間 (epoch timestamp)
         let current_time = tx_context::epoch_timestamp_ms(ctx);
-        assert!(current_time >= 1759800443665, E_TIMEOUT_NOT_YET);
+        assert!(current_time >= 1999999999000, E_TIMEOUT_NOT_YET);
 
         // 3. 推進狀態機 (進入 timeout_continuation)
         
         // 結束：更新 stage 並等待下一個交易
-       contract.stage = 11;
+       contract.stage = 3;
     
     }
 
-    /// @dev Stage 2: 自動支付 (from Role(Ada provider) to Party(Role(Dollar provider)))
-    fun internal_pay_stage_2(
-        contract: &mut Contract,
-        ctx: &mut TxContext
+    /// @dev Stage 1: 合約終止
+    public fun close_stage_1(
+        contract: &mut Contract
     ) {
-        // 1. 驗證
+        assert!(contract.stage == 1, E_WRONG_STAGE);
+        
+        // 標記為結束 (使用一個特殊 Stage ID，例如 u64 MAX，或者就停在當前 Stage)
+        // 這裡我們選擇不做任何事，因為這已經是終端節點。
+        // 使用者可以透過 withdraw_by_role 隨時取回剩餘資金。
+    }
+
+    /// @dev Stage 2: 合約終止
+    public fun close_stage_2(
+        contract: &mut Contract
+    ) {
         assert!(contract.stage == 2, E_WRONG_STAGE);
-
-        // 2. 求值/查找收款人
-        // 2. 求值/查找收款人
-        let amount = internal_eval(contract, vector[2, 0, 0, 0, 0, 0, 15, 66, 64, 2, 0, 0, 0, 0, 0, 0, 0, 0, 5], ctx);
-        let from_party_id = string::utf8(b"Role(Ada provider)");
         
-        // 從註冊表查找 Role 的地址
-        assert!(table::contains(&contract.role_registry, string::utf8(b"Dollar provider")), E_ROLE_NOT_FOUND);
-        let receiver_addr = *table::borrow(&contract.role_registry, string::utf8(b"Dollar provider"));
-        
-
-        // 3. 執行支付
-        internal_pay<sui::sui::SUI>(contract, from_party_id, receiver_addr, amount, ctx);
-
-        // 4. 推進狀態機
-        
-        // 自動呼叫鏈：執行下一個自動 stage
-        contract.stage = 3;
-        internal_pay_stage_3(contract, ctx);
-
+        // 標記為結束 (使用一個特殊 Stage ID，例如 u64 MAX，或者就停在當前 Stage)
+        // 這裡我們選擇不做任何事，因為這已經是終端節點。
+        // 使用者可以透過 withdraw_by_role 隨時取回剩餘資金。
     }
 
-    /// @dev Stage 3: 自動支付 (from Role(Dollar provider) to Party(Role(Ada provider)))
-    fun internal_pay_stage_3(
-        contract: &mut Contract,
-        ctx: &mut TxContext
+    /// @dev Stage 3: 合約終止
+    public fun close_stage_3(
+        contract: &mut Contract
     ) {
-        // 1. 驗證
         assert!(contract.stage == 3, E_WRONG_STAGE);
-
-        // 2. 求值/查找收款人
-        // 2. 求值/查找收款人
-        let amount = internal_eval(contract, vector[2, 0, 0, 0, 0, 0, 0, 0, 0], ctx);
-        let from_party_id = string::utf8(b"Role(Dollar provider)");
-        
-        // 從註冊表查找 Role 的地址
-        assert!(table::contains(&contract.role_registry, string::utf8(b"Ada provider")), E_ROLE_NOT_FOUND);
-        let receiver_addr = *table::borrow(&contract.role_registry, string::utf8(b"Ada provider"));
-        
-
-        // 3. 執行支付
-        internal_pay<test::mock_dollar::DOLLAR>(contract, from_party_id, receiver_addr, amount, ctx);
-
-        // 4. 推進狀態機
-        
-        // 結束：更新 stage 並等待下一個交易
-       contract.stage = 4;
-    
-    }
-
-    /// @dev Stage 7: 自動支付 (from Role(Ada provider) to Party(Role(Dollar provider)))
-    fun internal_pay_stage_7(
-        contract: &mut Contract,
-        ctx: &mut TxContext
-    ) {
-        // 1. 驗證
-        assert!(contract.stage == 7, E_WRONG_STAGE);
-
-        // 2. 求值/查找收款人
-        // 2. 求值/查找收款人
-        let amount = internal_eval(contract, vector[2, 0, 0, 0, 0, 0, 15, 66, 64, 2, 0, 0, 0, 0, 0, 0, 0, 0, 5], ctx);
-        let from_party_id = string::utf8(b"Role(Ada provider)");
-        
-        // 從註冊表查找 Role 的地址
-        assert!(table::contains(&contract.role_registry, string::utf8(b"Dollar provider")), E_ROLE_NOT_FOUND);
-        let receiver_addr = *table::borrow(&contract.role_registry, string::utf8(b"Dollar provider"));
-        
-
-        // 3. 執行支付
-        internal_pay<sui::sui::SUI>(contract, from_party_id, receiver_addr, amount, ctx);
-
-        // 4. 推進狀態機
-        
-        // 自動呼叫鏈：執行下一個自動 stage
-        contract.stage = 8;
-        internal_pay_stage_8(contract, ctx);
-
-    }
-
-    /// @dev Stage 8: 自動支付 (from Role(Dollar provider) to Party(Role(Ada provider)))
-    fun internal_pay_stage_8(
-        contract: &mut Contract,
-        ctx: &mut TxContext
-    ) {
-        // 1. 驗證
-        assert!(contract.stage == 8, E_WRONG_STAGE);
-
-        // 2. 求值/查找收款人
-        // 2. 求值/查找收款人
-        let amount = internal_eval(contract, vector[2, 0, 0, 0, 0, 0, 0, 0, 0], ctx);
-        let from_party_id = string::utf8(b"Role(Dollar provider)");
-        
-        // 從註冊表查找 Role 的地址
-        assert!(table::contains(&contract.role_registry, string::utf8(b"Ada provider")), E_ROLE_NOT_FOUND);
-        let receiver_addr = *table::borrow(&contract.role_registry, string::utf8(b"Ada provider"));
-        
-
-        // 3. 執行支付
-        internal_pay<test::mock_dollar::DOLLAR>(contract, from_party_id, receiver_addr, amount, ctx);
-
-        // 4. 推進狀態機
-        
-        // 結束：更新 stage 並等待下一個交易
-       contract.stage = 9;
-    
-    }
-
-    /// @dev Stage 4: 合約終止
-    public fun close_stage_4(
-        contract: &mut Contract
-    ) {
-        assert!(contract.stage == 4, E_WRONG_STAGE);
-        
-        // 標記為結束 (使用一個特殊 Stage ID，例如 u64 MAX，或者就停在當前 Stage)
-        // 這裡我們選擇不做任何事，因為這已經是終端節點。
-        // 使用者可以透過 withdraw_by_role 隨時取回剩餘資金。
-    }
-
-    /// @dev Stage 5: 合約終止
-    public fun close_stage_5(
-        contract: &mut Contract
-    ) {
-        assert!(contract.stage == 5, E_WRONG_STAGE);
-        
-        // 標記為結束 (使用一個特殊 Stage ID，例如 u64 MAX，或者就停在當前 Stage)
-        // 這裡我們選擇不做任何事，因為這已經是終端節點。
-        // 使用者可以透過 withdraw_by_role 隨時取回剩餘資金。
-    }
-
-    /// @dev Stage 9: 合約終止
-    public fun close_stage_9(
-        contract: &mut Contract
-    ) {
-        assert!(contract.stage == 9, E_WRONG_STAGE);
-        
-        // 標記為結束 (使用一個特殊 Stage ID，例如 u64 MAX，或者就停在當前 Stage)
-        // 這裡我們選擇不做任何事，因為這已經是終端節點。
-        // 使用者可以透過 withdraw_by_role 隨時取回剩餘資金。
-    }
-
-    /// @dev Stage 10: 合約終止
-    public fun close_stage_10(
-        contract: &mut Contract
-    ) {
-        assert!(contract.stage == 10, E_WRONG_STAGE);
-        
-        // 標記為結束 (使用一個特殊 Stage ID，例如 u64 MAX，或者就停在當前 Stage)
-        // 這裡我們選擇不做任何事，因為這已經是終端節點。
-        // 使用者可以透過 withdraw_by_role 隨時取回剩餘資金。
-    }
-
-    /// @dev Stage 11: 合約終止
-    public fun close_stage_11(
-        contract: &mut Contract
-    ) {
-        assert!(contract.stage == 11, E_WRONG_STAGE);
         
         // 標記為結束 (使用一個特殊 Stage ID，例如 u64 MAX，或者就停在當前 Stage)
         // 這裡我們選擇不做任何事，因為這已經是終端節點。
