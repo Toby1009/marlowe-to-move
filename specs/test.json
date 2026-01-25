@@ -1,0 +1,22 @@
+{
+  "when": [
+    {
+      "then": "close",
+      "case": {
+        "party": {
+          "address": "hello_world"
+        },
+        "of_token": {
+          "token_name": "",
+          "currency_symbol": ""
+        },
+        "into_account": {
+          "address": ""
+        },
+        "deposits": 10000
+      }
+    }
+  ],
+  "timeout_continuation": "close",
+  "timeout": 1758006542036
+}

@@ -1,0 +1,22 @@
+{
+  "when": [
+    {
+      "case": {
+        "for_choice": {
+           "choice_name": "pick_number",
+           "choice_owner": {"role_token": "Oracle"}
+        },
+        "choose_between": [{"from": 1, "to": 10}]
+      },
+      "then": "close"
+    },
+    {
+      "case": {
+        "notify_if": true
+      },
+      "then": "close"
+    }
+  ],
+  "timeout": 1999999999000,
+  "timeout_continuation": "close"
+}

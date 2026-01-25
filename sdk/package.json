@@ -1,0 +1,18 @@
+{
+    "name": "marlowe-sui-project",
+    "version": "1.0.0",
+    "description": "Marlowe on Sui - Generated SDK",
+    "main": "sdk/contract_sdk.ts",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1",
+        "build": "tsc"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "dependencies": {
+        "@mysten/sui": "^1.45.2",
+        "@types/node": "^25.0.10",
+        "typescript": "^5.9.3"
+    }
+}
