@@ -7,7 +7,7 @@ This project enables the deployment of Marlowe financial contracts on the Sui Bl
 
 ## 🏗️ Architecture
 The project is structured into three main components:
--   **`generator/`**: Python scripts (`repro_generator.py`) that compile JSON specs into Move code.
+-   **`generator/`**: Python scripts (`build.py`, `gen_mocks.py`) that compile JSON specs into Move code.
 -   **`contract/`**: The Sui Move package containing the generated logic (`sources/`) and tests (`tests/`).
 -   **`sdk/`**: The generated TypeScript SDK for frontend integration.
 
@@ -46,6 +46,7 @@ Since Move does not support recursive structs (needed for deep ASTs), we impleme
     -   `sui move build` passes.
     -   Legacy/2024 Move compatibility handled.
     -   Linter warnings resolved.
+    -   **Refactored**: Generator split into Production (`build.py`) and Testing (`gen_mocks.py`).
 
 ## 🚀 Next Steps
 1.  **Frontend Development**: Use the SDK to build a React/Next.js UI.
