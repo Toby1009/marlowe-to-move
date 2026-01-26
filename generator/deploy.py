@@ -84,5 +84,10 @@ def main():
     
     print(f"Artifacts saved to {DEPLOYMENT_FILE}")
 
+    # 5. Regenerate SDK with new IDs
+    print("\nRegenerating SDKs with new Contract IDs...")
+    run_command(f"python3 {os.path.join(SCRIPTS_DIR, 'build.py')}")
+    print("✅ SDKs Updated!")
+
 if __name__ == "__main__":
     main()
