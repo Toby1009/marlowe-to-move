@@ -266,7 +266,7 @@ module test::swap_eth_usdc {
             } else if (op == OP_NEG) {
                  assert!(vector::length(&stack) >= 1, E_STACK_UNDERFLOW);
                  // Negate (For now just push 0 or -x, but u64 is unsigned)
-                 // Keeping it 0 for MVP unsafety
+                 // Note: u64 is unsigned, so negation is not supported in this MVP.
                  let _val = vector::pop_back(&mut stack);
                  vector::push_back(&mut stack, 0);
             } else if (op == OP_GET_ACC) {
@@ -361,7 +361,7 @@ module test::swap_eth_usdc {
     ) {
         // 1. 建構 Party ID
         let sender = tx_context::sender(ctx);
-        // Note: For full support, verify this string construction matches Logic Table keys
+        // TODO: Implement Party ID construction matching Logic Table keys
         abort E_WRONG_CALLER
     }
 
@@ -400,7 +400,10 @@ module test::swap_eth_usdc {
         contract: &mut Contract, role_nft: &RoleNFT, deposit_coin: Coin<test::mock_usdc::USDC>, ctx: &mut TxContext
     ) {
         // 1. 驗證
-        assert!(contract.stage == 1, E_WRONG_STAGE);        assert!(coin::value(&deposit_coin) == internal_eval(contract, vector[2, 0, 0, 0, 0, 178, 208, 94, 0], ctx), E_WRONG_AMOUNT);        assert!(tx_context::epoch_timestamp_ms(ctx) < 1759802243665, E_TIMEOUT_PASSED);        assert_role(contract, role_nft, string::utf8(b"USDC provider"));
+        assert!(contract.stage == 1, E_WRONG_STAGE);
+        assert!(coin::value(&deposit_coin) == internal_eval(contract, vector[2, 0, 0, 0, 0, 178, 208, 94, 0], ctx), E_WRONG_AMOUNT);
+        assert!(tx_context::epoch_timestamp_ms(ctx) < 1759802243665, E_TIMEOUT_PASSED);
+        assert_role(contract, role_nft, string::utf8(b"USDC provider"));
 
         // 2. 執行存款
         internal_deposit<test::mock_usdc::USDC>(contract, string::utf8(b"Role(USDC provider)"), deposit_coin, ctx);
@@ -417,7 +420,10 @@ module test::swap_eth_usdc {
         contract: &mut Contract, role_nft: &RoleNFT, deposit_coin: Coin<test::mock_eth::ETH>, ctx: &mut TxContext
     ) {
         // 1. 驗證
-        assert!(contract.stage == 6, E_WRONG_STAGE);        assert!(coin::value(&deposit_coin) == internal_eval(contract, vector[2, 0, 0, 0, 0, 89, 104, 47, 0], ctx), E_WRONG_AMOUNT);        assert!(tx_context::epoch_timestamp_ms(ctx) < 1759802243665, E_TIMEOUT_PASSED);        assert_role(contract, role_nft, string::utf8(b"ETH provider"));
+        assert!(contract.stage == 6, E_WRONG_STAGE);
+        assert!(coin::value(&deposit_coin) == internal_eval(contract, vector[2, 0, 0, 0, 0, 89, 104, 47, 0], ctx), E_WRONG_AMOUNT);
+        assert!(tx_context::epoch_timestamp_ms(ctx) < 1759802243665, E_TIMEOUT_PASSED);
+        assert_role(contract, role_nft, string::utf8(b"ETH provider"));
 
         // 2. 執行存款
         internal_deposit<test::mock_eth::ETH>(contract, string::utf8(b"Role(ETH provider)"), deposit_coin, ctx);
@@ -434,7 +440,10 @@ module test::swap_eth_usdc {
         contract: &mut Contract, role_nft: &RoleNFT, deposit_coin: Coin<test::mock_eth::ETH>, ctx: &mut TxContext
     ) {
         // 1. 驗證
-        assert!(contract.stage == 0, E_WRONG_STAGE);        assert!(coin::value(&deposit_coin) == internal_eval(contract, vector[2, 0, 0, 0, 0, 89, 104, 47, 0], ctx), E_WRONG_AMOUNT);        assert!(tx_context::epoch_timestamp_ms(ctx) < 1759800443665, E_TIMEOUT_PASSED);        assert_role(contract, role_nft, string::utf8(b"ETH provider"));
+        assert!(contract.stage == 0, E_WRONG_STAGE);
+        assert!(coin::value(&deposit_coin) == internal_eval(contract, vector[2, 0, 0, 0, 0, 89, 104, 47, 0], ctx), E_WRONG_AMOUNT);
+        assert!(tx_context::epoch_timestamp_ms(ctx) < 1759800443665, E_TIMEOUT_PASSED);
+        assert_role(contract, role_nft, string::utf8(b"ETH provider"));
 
         // 2. 執行存款
         internal_deposit<test::mock_eth::ETH>(contract, string::utf8(b"Role(ETH provider)"), deposit_coin, ctx);
@@ -450,7 +459,10 @@ module test::swap_eth_usdc {
         contract: &mut Contract, role_nft: &RoleNFT, deposit_coin: Coin<test::mock_usdc::USDC>, ctx: &mut TxContext
     ) {
         // 1. 驗證
-        assert!(contract.stage == 0, E_WRONG_STAGE);        assert!(coin::value(&deposit_coin) == internal_eval(contract, vector[2, 0, 0, 0, 0, 178, 208, 94, 0], ctx), E_WRONG_AMOUNT);        assert!(tx_context::epoch_timestamp_ms(ctx) < 1759800443665, E_TIMEOUT_PASSED);        assert_role(contract, role_nft, string::utf8(b"USDC provider"));
+        assert!(contract.stage == 0, E_WRONG_STAGE);
+        assert!(coin::value(&deposit_coin) == internal_eval(contract, vector[2, 0, 0, 0, 0, 178, 208, 94, 0], ctx), E_WRONG_AMOUNT);
+        assert!(tx_context::epoch_timestamp_ms(ctx) < 1759800443665, E_TIMEOUT_PASSED);
+        assert_role(contract, role_nft, string::utf8(b"USDC provider"));
 
         // 2. 執行存款
         internal_deposit<test::mock_usdc::USDC>(contract, string::utf8(b"Role(USDC provider)"), deposit_coin, ctx);
@@ -530,7 +542,6 @@ module test::swap_eth_usdc {
         assert!(contract.stage == 2, E_WRONG_STAGE);
 
         // 2. 求值/查找收款人
-        // 2. 求值/查找收款人
         let amount = internal_eval(contract, vector[2, 0, 0, 0, 0, 89, 104, 47, 0], ctx);
         let from_party_id = string::utf8(b"Role(ETH provider)");
         
@@ -559,7 +570,6 @@ module test::swap_eth_usdc {
         assert!(contract.stage == 3, E_WRONG_STAGE);
 
         // 2. 求值/查找收款人
-        // 2. 求值/查找收款人
         let amount = internal_eval(contract, vector[2, 0, 0, 0, 0, 178, 208, 94, 0], ctx);
         let from_party_id = string::utf8(b"Role(USDC provider)");
         
@@ -586,7 +596,6 @@ module test::swap_eth_usdc {
         // 1. 驗證
         assert!(contract.stage == 7, E_WRONG_STAGE);
 
-        // 2. 求值/查找收款人
         // 2. 求值/查找收款人
         let amount = internal_eval(contract, vector[2, 0, 0, 0, 0, 89, 104, 47, 0], ctx);
         let from_party_id = string::utf8(b"Role(ETH provider)");
@@ -615,7 +624,6 @@ module test::swap_eth_usdc {
         // 1. 驗證
         assert!(contract.stage == 8, E_WRONG_STAGE);
 
-        // 2. 求值/查找收款人
         // 2. 求值/查找收款人
         let amount = internal_eval(contract, vector[2, 0, 0, 0, 0, 178, 208, 94, 0], ctx);
         let from_party_id = string::utf8(b"Role(USDC provider)");

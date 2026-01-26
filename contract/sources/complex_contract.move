@@ -266,7 +266,7 @@ module test::complex_contract {
             } else if (op == OP_NEG) {
                  assert!(vector::length(&stack) >= 1, E_STACK_UNDERFLOW);
                  // Negate (For now just push 0 or -x, but u64 is unsigned)
-                 // Keeping it 0 for MVP unsafety
+                 // Note: u64 is unsigned, so negation is not supported in this MVP.
                  let _val = vector::pop_back(&mut stack);
                  vector::push_back(&mut stack, 0);
             } else if (op == OP_GET_ACC) {
@@ -361,7 +361,7 @@ module test::complex_contract {
     ) {
         // 1. 建構 Party ID
         let sender = tx_context::sender(ctx);
-        // Note: For full support, verify this string construction matches Logic Table keys
+        // TODO: Implement Party ID construction matching Logic Table keys
         abort E_WRONG_CALLER
     }
 
@@ -400,7 +400,10 @@ module test::complex_contract {
         contract: &mut Contract, role_nft: &RoleNFT, chosen_num: u64, ctx: &mut TxContext
     ) {
         // 1. 驗證
-        assert!(contract.stage == 0, E_WRONG_STAGE);        assert!(tx_context::epoch_timestamp_ms(ctx) < 1999999999000, E_TIMEOUT_PASSED);        assert_role(contract, role_nft, string::utf8(b"Oracle"));        assert!((chosen_num >= 1 && chosen_num <= 10), E_INVALID_CHOICE);
+        assert!(contract.stage == 0, E_WRONG_STAGE);
+        assert!(tx_context::epoch_timestamp_ms(ctx) < 1999999999000, E_TIMEOUT_PASSED);
+        assert_role(contract, role_nft, string::utf8(b"Oracle"));
+        assert!((chosen_num >= 1 && chosen_num <= 10), E_INVALID_CHOICE);
 
         // 2. 記錄 Choice
         
@@ -423,7 +426,9 @@ module test::complex_contract {
         contract: &mut Contract, ctx: &mut TxContext
     ) {
         // 1. 驗證
-        assert!(contract.stage == 0, E_WRONG_STAGE);        assert!(internal_eval(contract, vector[2, 0, 0, 0, 0, 0, 0, 0, 1], ctx) == 1, E_ASSERT_FAILED);        assert!(tx_context::epoch_timestamp_ms(ctx) < 1999999999000, E_TIMEOUT_PASSED);
+        assert!(contract.stage == 0, E_WRONG_STAGE);
+        assert!(internal_eval(contract, vector[2, 0, 0, 0, 0, 0, 0, 0, 1], ctx) == 1, E_ASSERT_FAILED);
+        assert!(tx_context::epoch_timestamp_ms(ctx) < 1999999999000, E_TIMEOUT_PASSED);
 
         // 2. 推進狀態機
         

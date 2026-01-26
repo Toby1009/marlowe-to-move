@@ -346,7 +346,7 @@ module test::{module_name} {{
             }} else if (op == OP_NEG) {{
                  assert!(vector::length(&stack) >= 1, E_STACK_UNDERFLOW);
                  // Negate (For now just push 0 or -x, but u64 is unsigned)
-                 // Keeping it 0 for MVP unsafety
+                 // Note: u64 is unsigned, so negation is not supported in this MVP.
                  let _val = vector::pop_back(&mut stack);
                  vector::push_back(&mut stack, 0);
             }} else if (op == OP_GET_ACC) {{
@@ -441,7 +441,7 @@ module test::{module_name} {{
     ) {{
         // 1. 建構 Party ID
         let sender = tx_context::sender(ctx);
-        // Note: For full support, verify this string construction matches Logic Table keys
+        // TODO: Implement Party ID construction matching Logic Table keys
         abort E_WRONG_CALLER
     }}
 
@@ -669,7 +669,7 @@ def generate_choice_function(choice: ChoiceStageInfo, stage_lookup: StageLookup)
         {', '.join(sig_params)}
     ) {{
         // 1. 驗證
-        {'        '.join(assertions)}
+        {'\n        '.join(assertions)}
 
         // 2. 記錄 Choice
         {write_state}
@@ -708,7 +708,7 @@ def generate_notify_function(notify: NotifyStageInfo, stage_lookup: StageLookup)
         {', '.join(sig_params)}
     ) {{
         // 1. 驗證
-        {'        '.join(assertions)}
+        {'\n        '.join(assertions)}
 
         // 2. 推進狀態機
         {automation_tail}
@@ -856,7 +856,7 @@ def generate_deposit_function(dep: DepositStageInfo, stage_lookup: StageLookup, 
         {', '.join(sig_params)}
     ) {{
         // 1. 驗證
-        {'        '.join(assertions)}
+        {'\n        '.join(assertions)}
 
         // 2. 執行存款
         internal_deposit<{token_name}>(contract, {party_id_str_for_logic}, deposit_coin, ctx);
@@ -907,7 +907,6 @@ def generate_pay_function(pay: PayStageInfo, stage_lookup: StageLookup) -> str:
         // 1. 驗證
         assert!(contract.stage == {pay.stage}, E_WRONG_STAGE);
 
-        // 2. 求值/查找收款人
         // 2. 求值/查找收款人
         {amount_code}
         let from_party_id = {from_party_id_str_for_logic};
