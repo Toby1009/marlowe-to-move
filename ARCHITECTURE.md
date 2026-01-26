@@ -16,20 +16,23 @@ The system follows a 4-step generation process:
     -   **TypeScript**: `ts_generator.py` produces the client SDK (`sdk/`).
 4.  **Deployment**: `deploy.py` handles compiling and publishing to the Sui network.
 
-### 2. Smart Contract Design (Move)
-The generated contract (`sources/complex_contract.move`) uses a novel architecture to handle Marlowe's complexity on-chain:
-
-*   **Finite State Machine (FSM)**: The contract stores a `stage` variable (`u64`). Each user action (Deposit, Choice) is a specific function that checks `assert!(stage == expected)`.
-*   **RPN Interpreter**: Instead of compiling logical expressions into recursive function calls (which hit stack limits), logic is compiled into **Reverse Polish Notation (RPN)** bytecode (`vector<u8>`). A unified `internal_eval` function executes this bytecode at runtime (Stack Machine).
 *   **Multi-Token Vault (Bag)**: The contract uses a `Bag` to store heterogeneous assets (`Balance<T>`).
     -   Users can deposit ANY Coin type defined in the contract.
     -   Internal accounting tracks "logical" balances vs "actual" vault balances.
+
+### 3. Deployment Flow
+Deployment is handled by `generator/deploy.py`, which automates the transition from Move code to a live contract:
+1.  **Publish**: Runs `sui client publish` and captures JSON output.
+2.  **Artifact Tracking**: Extracts `package_id` and `contract_id`, saving them to `deployments/deployment.json`.
+3.  **SDK Synchronization**: Automatically triggers `build.py` after deployment. This ensures that the generated TypeScript SDKs are instantly updated with the new on-chain addresses.
+4.  **Network Awareness**: Currently configured for `testnet` (default Sui CLI environment).
 
 ### 3. File Structure
 ```text
 .
 ├── generator/              # Python Generators & Utilities (Was `scripts`)
-│   ├── repro_generator.py  # Main Entry
+│   ├── build.py            # Main Entry (Production)
+│   ├── gen_mocks.py        # Mock Token Generator (Testing)
 │   ├── move_generator.py   # Code Logic
 │   └── ...
 ├── contract/               # Sui Move Package
@@ -52,9 +55,13 @@ The generated contract (`sources/complex_contract.move`) uses a novel architectu
 -   Node.js & NPM
 
 ### Step 1: Generate
-Run the generator (from root):
+Compile all specs in `specs/`:
 ```bash
-python3 generator/repro_generator.py
+python3 generator/build.py
+```
+(Optional) Generate mock tokens for local testing:
+```bash
+python3 generator/gen_mocks.py
 ```
 
 ### Step 2: Test (Local)
