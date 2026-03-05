@@ -8,6 +8,7 @@ Command-line interface for generating Move smart contracts from Marlowe specs.
 import argparse
 import json
 import os
+import subprocess
 import sys
 from typing import Optional
 
@@ -27,7 +28,13 @@ except ImportError:
 # Local imports
 from parser import parse_contract
 from fsm_model import parse_contract_to_infos
-from move_generator import generate_module, build_stage_lookup, generate_test_module
+from move_generator import (
+    generate_module,
+    build_stage_lookup,
+    generate_test_module,
+    sanitize_module_name,
+    LoweringOptions,
+)
 from ts_generator import generate_ts_sdk
 
 # Path setup
@@ -37,6 +44,7 @@ SPECS_DIR = os.path.join(ROOT_DIR, "specs")
 CONTRACT_DIR = os.path.join(ROOT_DIR, "contract")
 SDK_DIR = os.path.join(ROOT_DIR, "sdk")
 DEPLOYMENT_FILE = os.path.join(ROOT_DIR, "deployments", "deployment.json")
+INTENT_PIPELINE_SCRIPT = os.path.join(SCRIPTS_DIR, "intent_pipeline.py")
 
 console = Console() if RICH_AVAILABLE else None
 
@@ -145,9 +153,15 @@ def cmd_validate(args):
     return 0 if fail_count == 0 else 1
 
 
-def build_single_spec(spec_file: str, output_dir: Optional[str] = None) -> bool:
+def build_single_spec(
+    spec_file: str,
+    output_dir: Optional[str] = None,
+    lowering_options: Optional[LoweringOptions] = None,
+) -> bool:
     """Build a single spec file."""
-    module_name = os.path.splitext(spec_file)[0]
+    lowering_options = (lowering_options or LoweringOptions()).normalized()
+    module_name_raw = os.path.splitext(spec_file)[0]
+    module_name = sanitize_module_name(module_name_raw)
     json_path = os.path.join(SPECS_DIR, spec_file)
     
     try:
@@ -160,22 +174,27 @@ def build_single_spec(spec_file: str, output_dir: Optional[str] = None) -> bool:
         stage_lookup = build_stage_lookup(infos)
         
         # Generate Move
-        move_code = generate_module(infos, stage_lookup, module_name=module_name)
-        output_path = os.path.join(output_dir or CONTRACT_DIR, "sources", f"{module_name}.move")
+        move_code = generate_module(
+            infos,
+            stage_lookup,
+            module_name=module_name,
+            options=lowering_options,
+        )
+        output_path = os.path.join(output_dir or CONTRACT_DIR, "sources", f"{module_name_raw}.move")
         os.makedirs(os.path.dirname(output_path), exist_ok=True)
         with open(output_path, "w") as f:
             f.write(move_code)
         
         # Generate Tests
         test_code = generate_test_module(infos, package_name=module_name)
-        test_path = os.path.join(output_dir or CONTRACT_DIR, "tests", f"{module_name}_tests.move")
+        test_path = os.path.join(output_dir or CONTRACT_DIR, "tests", f"{module_name_raw}_tests.move")
         os.makedirs(os.path.dirname(test_path), exist_ok=True)
         with open(test_path, "w") as f:
             f.write(test_code)
         
         # Generate TypeScript SDK
         ts_code = generate_ts_sdk(infos, deployment_path=DEPLOYMENT_FILE, module_name=module_name)
-        ts_path = os.path.join(SDK_DIR, f"{module_name}_sdk.ts")
+        ts_path = os.path.join(SDK_DIR, f"{module_name_raw}_sdk.ts")
         os.makedirs(os.path.dirname(ts_path), exist_ok=True)
         with open(ts_path, "w") as f:
             f.write(ts_code)
@@ -183,7 +202,7 @@ def build_single_spec(spec_file: str, output_dir: Optional[str] = None) -> bool:
         return True
         
     except Exception as e:
-        print_error(f"Build failed for {module_name}: {e}")
+        print_error(f"Build failed for {module_name_raw}: {e}")
         return False
 
 
@@ -204,6 +223,11 @@ def cmd_build(args):
         print_error("No specs to build")
         return 1
     
+    lowering_options = LoweringOptions(
+        choice_write_policy=args.choice_policy,
+        emit_debug_views=not args.no_emit_views,
+    ).normalized()
+
     success_count = 0
     fail_count = 0
     
@@ -221,7 +245,7 @@ def cmd_build(args):
                 name = os.path.splitext(spec)[0]
                 progress.update(task, description=f"Building {name}...")
                 
-                if build_single_spec(spec, args.output):
+                if build_single_spec(spec, args.output, lowering_options):
                     print_success(f"Built {name}")
                     success_count += 1
                 else:
@@ -233,7 +257,7 @@ def cmd_build(args):
             name = os.path.splitext(spec)[0]
             print(f"Building {name}...")
             
-            if build_single_spec(spec, args.output):
+            if build_single_spec(spec, args.output, lowering_options):
                 print_success(f"Built {name}")
                 success_count += 1
             else:
@@ -316,7 +340,14 @@ def cmd_deploy(args):
         
         # Regenerate SDKs
         print_info("Regenerating SDKs with new contract IDs...")
-        cmd_build(argparse.Namespace(spec=None, output=None))
+        cmd_build(
+            argparse.Namespace(
+                spec=None,
+                output=None,
+                choice_policy="set_once",
+                no_emit_views=False,
+            )
+        )
         
         return 0
         
@@ -326,6 +357,36 @@ def cmd_deploy(args):
     except Exception as e:
         print_error(f"Deployment error: {e}")
         return 1
+
+
+def cmd_intent(args):
+    """Run template-first + fallback authoring pipeline from natural-language input."""
+    if not os.path.exists(INTENT_PIPELINE_SCRIPT):
+        print_error(f"Intent pipeline script not found: {INTENT_PIPELINE_SCRIPT}")
+        return 1
+
+    cmd = [sys.executable, INTENT_PIPELINE_SCRIPT, args.input]
+    if args.answers:
+        cmd.extend(["--answers", args.answers])
+    if args.spec_name:
+        cmd.extend(["--spec-name", args.spec_name])
+    if args.module_name:
+        cmd.extend(["--module-name", args.module_name])
+    if args.force_fallback:
+        cmd.append("--force-fallback")
+    if args.skip_lower:
+        cmd.append("--skip-lower")
+    if args.choice_policy:
+        cmd.extend(["--choice-policy", args.choice_policy])
+    if args.no_emit_views:
+        cmd.append("--no-emit-views")
+
+    proc = subprocess.run(cmd, capture_output=True, text=True, check=False)
+    if proc.stdout:
+        print(proc.stdout.rstrip())
+    if proc.stderr:
+        print(proc.stderr.rstrip(), file=sys.stderr)
+    return proc.returncode
 
 
 def main():
@@ -339,6 +400,7 @@ Examples:
   %(prog)s build                   Build all specs
   %(prog)s build --spec swap_ada   Build specific spec
   %(prog)s validate                Validate all specs
+  %(prog)s intent requirements.md  Build from NL requirements
   %(prog)s deploy                  Deploy to Sui network
         """
     )
@@ -358,11 +420,39 @@ Examples:
     build_parser = subparsers.add_parser("build", help="Build Move contracts from specs")
     build_parser.add_argument("--spec", "-s", help="Specific spec to build")
     build_parser.add_argument("--output", "-o", help="Output directory")
+    build_parser.add_argument(
+        "--choice-policy",
+        choices=["set_once", "overwrite"],
+        default="set_once",
+        help="Choice write policy in generated Move (default: set_once)",
+    )
+    build_parser.add_argument(
+        "--no-emit-views",
+        action="store_true",
+        help="Do not emit debug/view helper functions in generated Move",
+    )
     build_parser.set_defaults(func=cmd_build)
     
     # Deploy command
     deploy_parser = subparsers.add_parser("deploy", help="Deploy to Sui network")
     deploy_parser.set_defaults(func=cmd_deploy)
+
+    # Intent pipeline command
+    intent_parser = subparsers.add_parser("intent", help="Intent -> Marlowe JSON -> validate -> optional lower")
+    intent_parser.add_argument("input", help="Requirement text/markdown path")
+    intent_parser.add_argument("--answers", help="Optional answers JSON")
+    intent_parser.add_argument("--spec-name", help="Output spec filename under specs/")
+    intent_parser.add_argument("--module-name", help="Override Move module name")
+    intent_parser.add_argument("--force-fallback", action="store_true", help="Skip template matching")
+    intent_parser.add_argument("--skip-lower", action="store_true", help="Skip Marlowe -> Move lowering")
+    intent_parser.add_argument(
+        "--choice-policy",
+        choices=["set_once", "overwrite"],
+        default="set_once",
+        help="Choice write policy for lowering (default: set_once)",
+    )
+    intent_parser.add_argument("--no-emit-views", action="store_true", help="Disable debug/view helpers in lowered Move")
+    intent_parser.set_defaults(func=cmd_intent)
     
     args = parser.parse_args()
     

@@ -1,4 +1,6 @@
 import json
+import re
+from dataclasses import dataclass
 from typing import Dict, List, Any, Tuple, Optional
 import struct # For pack_u64
 
@@ -21,6 +23,21 @@ from fsm_model import (
 # -----------------------------------------------------------------
 
 StageLookup = Dict[int, Tuple[str, Any]]
+MAX_U64 = 2**64 - 1
+
+
+@dataclass(frozen=True)
+class LoweringOptions:
+    """Codegen options that keep deterministic output for a fixed input + options."""
+
+    choice_write_policy: str = "set_once"  # "set_once" | "overwrite"
+    emit_debug_views: bool = True
+
+    def normalized(self) -> "LoweringOptions":
+        policy = self.choice_write_policy.strip().lower()
+        if policy not in ("set_once", "overwrite"):
+            raise ValueError(f"Unsupported choice_write_policy: {self.choice_write_policy}")
+        return LoweringOptions(choice_write_policy=policy, emit_debug_views=self.emit_debug_views)
 
 def build_stage_lookup(infos: Dict[str, List[Any]]) -> StageLookup:
     """建立 stage 編號到 (type, info) 的查找字典"""
@@ -66,8 +83,15 @@ def generate_automation_tail(next_stage: int, stage_lookup: StageLookup) -> str:
 # -----------------------------------------------------------------
 # 3. Move 模組和輔助函式 (Boilerplate)
 # -----------------------------------------------------------------
-def generate_module_header(infos: Dict[str, List[Any]], token_type: str, token_name_bytes: str, module_name: str = "generated_marlowe") -> str:
+def generate_module_header(
+    infos: Dict[str, List[Any]],
+    token_type: str,
+    token_name_bytes: str,
+    module_name: str = "generated_marlowe",
+    options: Optional[LoweringOptions] = None,
+) -> str:
     """產生 Move 模組標頭，包含狀態讀取 Helper"""
+    options = (options or LoweringOptions()).normalized()
 
     pay_has_roles = any(p.to.startswith("Role(") or p.from_account.startswith("Role(") for p in infos.get("pay", []))
     deposit_has_roles = any(p.party.startswith("Role(") or p.into_account.startswith("Role(") for p in infos.get("deposit", []))
@@ -95,11 +119,18 @@ def generate_module_header(infos: Dict[str, List[Any]], token_type: str, token_n
     /// @dev Only Admin can mint roles
     public fun mint_role(
         _: &AdminCap,
-        contract: &Contract,
+        contract: &mut Contract,
         name: String,
         recipient: address,
         ctx: &mut TxContext
     ) {
+        // Keep Role(name) -> recipient synchronized for Pay-to-Role flows.
+        if (table::contains(&contract.role_registry, name)) {
+            *table::borrow_mut(&mut contract.role_registry, name) = recipient;
+        } else {
+            table::add(&mut contract.role_registry, name, recipient);
+        };
+
         let role_nft = RoleNFT {
             id: object::new(ctx),
             contract_id: object::id(contract),
@@ -108,6 +139,25 @@ def generate_module_header(infos: Dict[str, List[Any]], token_type: str, token_n
         transfer::public_transfer(role_nft, recipient);
     }
     """ if has_roles else ""
+
+    debug_views = """
+    // --- Debug/View Helpers ---
+    public fun get_current_stage(contract: &Contract): u64 {
+        contract.stage
+    }
+
+    public fun has_choice_value(contract: &Contract, choice_name: String, owner: String): bool {
+        string::append(&mut choice_name, string::utf8(b":"));
+        string::append(&mut choice_name, owner);
+        internal_has_choice(contract, choice_name)
+    }
+
+    public fun get_choice_value_or_zero(contract: &Contract, choice_name: String, owner: String): u64 {
+        string::append(&mut choice_name, string::utf8(b":"));
+        string::append(&mut choice_name, owner);
+        internal_get_choice(contract, choice_name)
+    }
+    """ if options.emit_debug_views else ""
 
     return f"""
 module test::{module_name} {{
@@ -135,6 +185,7 @@ module test::{module_name} {{
     const E_TIMEOUT_NOT_YET: u64 = 10;
     const E_STACK_UNDERFLOW: u64 = 11;
     const E_TIMEOUT_PASSED: u64 = 12;
+    const E_CHOICE_ALREADY_MADE: u64 = 13;
 
     // --- Opcodes (RPN) ---
     const OP_ZW: u8 = 0;
@@ -148,6 +199,7 @@ module test::{module_name} {{
     const OP_GET_ACC: u8 = 10; // +len +bytes +len +bytes
     const OP_GET_CHOICE: u8 = 11; // +len +bytes
     const OP_USE_VAL: u8 = 12; // +len +bytes
+    const OP_HAS_CHOICE: u8 = 13; // +len +bytes -> bool(u64)
     const OP_TIME_START: u8 = 20;
     const OP_TIME_END: u8 = 21;
     const OP_GT: u8 = 30;
@@ -195,6 +247,13 @@ module test::{module_name} {{
 
     #[test_only]
     public fun mint_role_for_testing(contract: &mut Contract, name: String, recipient: address, ctx: &mut TxContext) {{
+        // Keep Role(name) -> recipient synchronized for Pay-to-Role flows.
+        if (table::contains(&contract.role_registry, name)) {{
+            *table::borrow_mut(&mut contract.role_registry, name) = recipient;
+        }} else {{
+            table::add(&mut contract.role_registry, name, recipient);
+        }};
+
         let role_nft = RoleNFT {{
             id: object::new(ctx),
             contract_id: object::id(contract),
@@ -231,6 +290,8 @@ module test::{module_name} {{
             *table::borrow(&contract.bound_values, value_id)
         }} else {{ 0 }}
     }}
+
+    {debug_views}
 
     // --- Core Logic Helpers ---
 
@@ -378,6 +439,15 @@ module test::{module_name} {{
                 i = i + c_len;
                 let val = internal_get_choice(contract, string::utf8(choice_bytes));
                 vector::push_back(&mut stack, val);
+            }} else if (op == OP_HAS_CHOICE) {{
+                let c_len = (*vector::borrow(&bytecode, i) as u64);
+                i = i + 1;
+                let choice_bytes = vector::empty<u8>();
+                let k = 0;
+                while (k < c_len) {{ vector::push_back(&mut choice_bytes, *vector::borrow(&bytecode, i+k)); k = k + 1; }};
+                i = i + c_len;
+                let has_val = internal_has_choice(contract, string::utf8(choice_bytes));
+                vector::push_back(&mut stack, if (has_val) 1 else 0);
             }} else if (op == OP_USE_VAL) {{
                 let v_len = (*vector::borrow(&bytecode, i) as u64);
                 i = i + 1;
@@ -391,6 +461,10 @@ module test::{module_name} {{
                 vector::push_back(&mut stack, tx_context::epoch_timestamp_ms(ctx));
             }} else if (op == OP_TIME_END) {{
                 vector::push_back(&mut stack, tx_context::epoch_timestamp_ms(ctx)); // Sim
+            }} else if (op == OP_NOT) {{
+                 assert!(vector::length(&stack) >= 1, E_STACK_UNDERFLOW);
+                 let lhs = vector::pop_back(&mut stack);
+                 vector::push_back(&mut stack, if (lhs == 0) 1 else 0);
             }} else if (op == OP_CJUMP) {{
                  assert!(vector::length(&stack) >= 1, E_STACK_UNDERFLOW);
                  let cond = vector::pop_back(&mut stack);
@@ -414,14 +488,7 @@ module test::{module_name} {{
                  else if (op == OP_GE) {{ if (lhs >= rhs) 1 else 0 }}
                  else if (op == OP_AND) {{ if (lhs > 0 && rhs > 0) 1 else 0 }}
                  else if (op == OP_OR) {{ if (lhs > 0 || rhs > 0) 1 else 0 }}
-                 else if (op == OP_NOT) {{ if (lhs == 0) 1 else 0 }} // Unary actually... wait
                  else {{ 0 }};
-                 
-                 // Fix for Unary NOT (NOT pops 2 which is WRONG).
-                 // If op was NOT, we popped 2 which is WRONG.
-                 // Correcting...
-                 // Re-push if we made a mistake?
-                 // Let's split NOT out.
                  vector::push_back(&mut stack, res);
             }};
         }};
@@ -488,6 +555,16 @@ def sanitize_name(name: str) -> str:
         name = 'marlowe_' + name
     return name.lower()
 
+
+def sanitize_module_name(name: str) -> str:
+    """Normalize a module name into a Move-compatible identifier."""
+    sanitized = re.sub(r'[^a-zA-Z0-9_]', '_', name)
+    if not sanitized:
+        sanitized = "generated_marlowe"
+    if not sanitized[0].isalpha():
+        sanitized = f"m_{sanitized}"
+    return sanitized
+
 def parse_party_str(party_str: str) -> Tuple[str, str]:
     """
     (FIXED) 輔助函式：解析 Party 字串，支援 "Party(Role(...))" 格式
@@ -525,6 +602,7 @@ OP_NEG = 7
 OP_GET_ACC = 10
 OP_GET_CHOICE = 11
 OP_USE_VAL = 12
+OP_HAS_CHOICE = 13
 OP_TIME_START = 20
 OP_TIME_END = 21
 OP_GT = 30
@@ -549,6 +627,10 @@ def generate_bytecode(node) -> str:
 
 def _serialize_node(node) -> List[int]:
     if isinstance(node, int):
+        if node < 0:
+            raise ValueError(f"Negative integers are unsupported in current Move lowering: {node}")
+        if node > MAX_U64:
+            raise ValueError(f"Integer exceeds u64 range: {node}")
         return [OP_CONST] + pack_u64(node)
     if isinstance(node, bool):
         return [OP_TRUE] if node else [OP_ZW]
@@ -558,7 +640,8 @@ def _serialize_node(node) -> List[int]:
         if "sub" in node: return _serialize_node(node['sub'][0]) + _serialize_node(node['sub'][1]) + [OP_SUB]
         if "mul" in node: return _serialize_node(node['mul'][0]) + _serialize_node(node['mul'][1]) + [OP_MUL]
         if "div" in node: return _serialize_node(node['div'][0]) + _serialize_node(node['div'][1]) + [OP_DIV]
-        if "negate" in node: return _serialize_node(node['negate']) + [OP_NEG]
+        if "negate" in node:
+            raise ValueError("negate is not supported in current Move lowering")
         
         if "available_money" in node:
             am = node["available_money"]
@@ -593,22 +676,25 @@ def _serialize_node(node) -> List[int]:
             return val_a + val_b + [OP_GE] + val_b + val_a + [OP_GE] + [OP_AND]
 
         if "chose_something_for" in node:
-             # Check if choice exists. We can use GET_CHOICE and check > 0 (hack) 
-             # Or add OP_HAS_CHOICE. 
-             # For MVP, let's use GET_CHOICE + CHECK.
-             # But GET_CHOICE returns value (u64). 
-             # We really need OP_HAS_CHOICE. 
-             # Let's fallback to False for now or strictly implement it later.
-             return [OP_ZW] 
+            choice_obj = node["chose_something_for"]
+            if not isinstance(choice_obj, dict):
+                raise ValueError(f"Invalid chose_something_for payload: {choice_obj}")
+            key = f"{choice_obj['name']}:{choice_obj['owner']}"
+            return [OP_HAS_CHOICE] + pack_string(key)
 
     if node == "time_interval_start": return [OP_TIME_START]
     if node == "time_interval_end": return [OP_TIME_END]
 
-    return [OP_ZW]
+    raise ValueError(f"Unsupported node for bytecode lowering: {node}")
 
 
-def generate_choice_function(choice: ChoiceStageInfo, stage_lookup: StageLookup) -> str:
+def generate_choice_function(
+    choice: ChoiceStageInfo,
+    stage_lookup: StageLookup,
+    options: Optional[LoweringOptions] = None,
+) -> str:
     """產生 Choice function"""
+    options = (options or LoweringOptions()).normalized()
     fn_name = f"choice_stage_{choice.stage}_case_{choice.case_index}"
     
     (party_type, party_id_raw) = parse_party_str(choice.by)
@@ -652,7 +738,13 @@ def generate_choice_function(choice: ChoiceStageInfo, stage_lookup: StageLookup)
     # So using `choice.by` directly is correct.
     choice_key_str = f"string::utf8(b\"{choice.choice_name}:{choice.by}\")"
     
-    write_state = f"""
+    if options.choice_write_policy == "set_once":
+        write_state = f"""
+        assert!(!table::contains(&contract.choices, {choice_key_str}), E_CHOICE_ALREADY_MADE);
+        table::add(&mut contract.choices, {choice_key_str}, chosen_num);
+    """
+    else:
+        write_state = f"""
         if (table::contains(&contract.choices, {choice_key_str})) {{
             *table::borrow_mut(&mut contract.choices, {choice_key_str}) = chosen_num;
         }} else {{
@@ -717,6 +809,8 @@ def generate_notify_function(notify: NotifyStageInfo, stage_lookup: StageLookup)
 
 def generate_test_module(infos: Dict[str, List[Any]], package_name: str = "generated_marlowe") -> str:
     """Generates a Move test module with specific Role/Choice steps."""
+    package_name = sanitize_module_name(package_name)
+    test_module_name = f"{sanitize_module_name(package_name)}_tests"
     
     # 1. Analyze Stage 0 for initial actions
     setup_steps = ""
@@ -767,7 +861,7 @@ def generate_test_module(infos: Dict[str, List[Any]], package_name: str = "gener
 
     return f"""
 #[test_only]
-module test::contract_tests {{
+module test::{test_module_name} {{
     use sui::test_scenario;
     use sui::coin;
     use std::option;
@@ -1086,13 +1180,20 @@ def extract_token_name(token_type: str) -> str:
         return token_type.split("::")[-1]
     return token_type
 
-def generate_module(infos: Dict[str, List[Any]], stage_lookup: StageLookup, module_name: str = "generated_marlowe") -> str:
+def generate_module(
+    infos: Dict[str, List[Any]],
+    stage_lookup: StageLookup,
+    module_name: str = "generated_marlowe",
+    options: Optional[LoweringOptions] = None,
+) -> str:
     """整合所有 function 生成一個 Move module"""
+    options = (options or LoweringOptions()).normalized()
+    module_name = sanitize_module_name(module_name)
 
     token_type = get_contract_token_type(infos)
     token_name_simple = extract_token_name(token_type) # e.g. "SUI" or "USDC"
     
-    header = generate_module_header(infos, token_type, token_name_simple, module_name)
+    header = generate_module_header(infos, token_type, token_name_simple, module_name, options)
     body = ""
 
     # Generate functions based on the order they appear in infos keys
@@ -1102,7 +1203,7 @@ def generate_module(infos: Dict[str, List[Any]], stage_lookup: StageLookup, modu
     for dep in infos.get("deposit", []):
         body += generate_deposit_function(dep, stage_lookup, token_type)
     for choice in infos.get("choice", []):
-        body += generate_choice_function(choice, stage_lookup)
+        body += generate_choice_function(choice, stage_lookup, options)
     for notify in infos.get("notify", []):
         body += generate_notify_function(notify, stage_lookup)
     for when_info in infos.get("when", []):
