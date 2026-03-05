@@ -1,0 +1,50 @@
+{
+  "when": [
+    {
+      "case": {
+        "deposits": { "constant": 1000 },
+        "party": { "role_token": "Supporter" },
+        "of_token": { "currency_symbol": "test::mock_usdc::USDC", "token_name": "USDC" },
+        "into_account": { "role_token": "Project" }
+      },
+      "then": {
+        "when": [
+          {
+            "case": {
+              "notify_if": {
+                "value": {
+                  "amount_of_token": { "currency_symbol": "test::mock_usdc::USDC", "token_name": "USDC" },
+                  "in_account": { "role_token": "Project" }
+                },
+                "ge_than": { "constant": 1000 }
+              }
+            },
+            "then": {
+              "pay": {
+                "amount_of_token": { "currency_symbol": "test::mock_usdc::USDC", "token_name": "USDC" },
+                "in_account": { "role_token": "Project" }
+              },
+              "from_account": { "role_token": "Project" },
+              "to": { "party": { "role_token": "Creator" } },
+              "token": { "currency_symbol": "test::mock_usdc::USDC", "token_name": "USDC" },
+              "then": "close"
+            }
+          }
+        ],
+        "timeout": 1801267200000,
+        "timeout_continuation": {
+          "pay": {
+            "amount_of_token": { "currency_symbol": "test::mock_usdc::USDC", "token_name": "USDC" },
+            "in_account": { "role_token": "Project" }
+          },
+          "from_account": { "role_token": "Project" },
+          "to": { "party": { "role_token": "Supporter" } },
+          "token": { "currency_symbol": "test::mock_usdc::USDC", "token_name": "USDC" },
+          "then": "close"
+        }
+      }
+    }
+  ],
+  "timeout": 1800835200000,
+  "timeout_continuation": "close"
+}

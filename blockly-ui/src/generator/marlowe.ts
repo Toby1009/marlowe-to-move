@@ -190,9 +190,9 @@ function buildValue(block: Blockly.Block): any {
         by: buildValue(requireInput(block, 'RHS')),
       };
     case 'value_negate':
-      return {
-        negate: buildValue(requireInput(block, 'VALUE')),
-      };
+      throw new Error(
+        'value_negate is currently unsupported by the Marlowe-to-Move runtime. Use non-negative values and subtraction instead.'
+      );
     case 'value_choice_value':
       return {
         value_of_choice: buildChoiceId(requireInput(block, 'CHOICE')),

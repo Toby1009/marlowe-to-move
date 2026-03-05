@@ -1,0 +1,8 @@
+{
+  "status": "ok",
+  "contract": "close",
+  "notes": [
+    "Fill contract tree with Close/Pay/If/When nodes only."
+  ],
+  "assumptions": []
+}

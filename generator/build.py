@@ -1,7 +1,7 @@
 import json
 from parser import parse_contract
 from fsm_model import parse_contract_to_infos
-from move_generator import generate_module, build_stage_lookup, generate_test_module
+from move_generator import generate_module, build_stage_lookup, generate_test_module, sanitize_module_name
 from ts_generator import generate_ts_sdk
 import os
 import sys
@@ -22,7 +22,8 @@ def main():
         if not filename.endswith(".json") or filename == "test.json":
             continue
             
-        module_name = os.path.splitext(filename)[0]
+        module_name_raw = os.path.splitext(filename)[0]
+        module_name = sanitize_module_name(module_name_raw)
         json_path = os.path.join(specs_dir, filename)
         print(f"\nProcessing {filename} -> Module: {module_name}")
         
@@ -45,7 +46,7 @@ def main():
         print("Generating Move code...")
         move_code = generate_module(infos, stage_lookup, module_name=module_name)
         
-        output_path = os.path.join(ROOT_DIR, "contract", "sources", f"{module_name}.move")
+        output_path = os.path.join(ROOT_DIR, "contract", "sources", f"{module_name_raw}.move")
         os.makedirs(os.path.dirname(output_path), exist_ok=True)
         with open(output_path, "w") as f:
             f.write(move_code)
@@ -53,7 +54,7 @@ def main():
 
         print("Generating Test module...")
         test_code = generate_test_module(infos, package_name=module_name)
-        test_path = os.path.join(ROOT_DIR, "contract", "tests", f"{module_name}_tests.move")
+        test_path = os.path.join(ROOT_DIR, "contract", "tests", f"{module_name_raw}_tests.move")
         os.makedirs(os.path.dirname(test_path), exist_ok=True)
         with open(test_path, "w") as f:
             f.write(test_code)
@@ -63,7 +64,7 @@ def main():
         deployment_path = os.path.join(ROOT_DIR, "deployments", "deployment.json")
         ts_code = generate_ts_sdk(infos, deployment_path=deployment_path, module_name=module_name)
         
-        ts_path = os.path.join(ROOT_DIR, "sdk", f"{module_name}_sdk.ts")
+        ts_path = os.path.join(ROOT_DIR, "sdk", f"{module_name_raw}_sdk.ts")
         os.makedirs(os.path.dirname(ts_path), exist_ok=True)
         with open(ts_path, "w") as f:
             f.write(ts_code)

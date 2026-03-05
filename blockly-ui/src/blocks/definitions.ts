@@ -44,10 +44,10 @@ const blocks: BlockJson[] = [
   },
   {
     type: 'contract_when',
-    message0: 'When cases %1 timeout %2 timeout continuation %3',
+    message0: 'When cases %1 timeout (Unix ms) %2 timeout continuation %3',
     args0: [
       { type: 'input_statement', name: 'CASES', check: 'Case' },
-      { type: 'field_number', name: 'TIMEOUT', value: 0 },
+      { type: 'field_number', name: 'TIMEOUT', value: 1775174399000, min: 946684800000, precision: 1 },
       { type: 'input_value', name: 'TIMEOUT_CONT', check: 'Contract' },
     ],
     output: 'Contract',
@@ -120,8 +120,8 @@ const blocks: BlockJson[] = [
     type: 'bound_block',
     message0: 'Bound from %1 to %2',
     args0: [
-      { type: 'field_number', name: 'FROM', value: 0 },
-      { type: 'field_number', name: 'TO', value: 0 },
+      { type: 'field_number', name: 'FROM', value: 0, min: 0, precision: 1 },
+      { type: 'field_number', name: 'TO', value: 0, min: 0, precision: 1 },
     ],
     previousStatement: 'Bound',
     nextStatement: 'Bound',
@@ -187,7 +187,7 @@ const blocks: BlockJson[] = [
     type: 'value_constant',
     message0: 'Constant %1',
     args0: [
-      { type: 'field_number', name: 'VALUE', value: 0 },
+      { type: 'field_number', name: 'VALUE', value: 0, min: 0, precision: 1 },
     ],
     output: 'Value',
     colour: 210,
@@ -458,7 +458,6 @@ export const toolbox = {
         { kind: 'block', type: 'value_sub' },
         { kind: 'block', type: 'value_mul' },
         { kind: 'block', type: 'value_div' },
-        { kind: 'block', type: 'value_negate' },
         { kind: 'block', type: 'value_choice_value' },
         { kind: 'block', type: 'value_time_start' },
         { kind: 'block', type: 'value_time_end' },

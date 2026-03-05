@@ -1,6 +1,6 @@
 
 #[test_only]
-module test::contract_tests {
+module test::swap_eth_usdc_tests {
     use sui::test_scenario;
     use sui::coin;
     use std::option;

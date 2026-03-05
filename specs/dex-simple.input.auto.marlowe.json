@@ -1,0 +1,140 @@
+{
+  "when": [
+    {
+      "case": {
+        "deposits": 100,
+        "party": {
+          "role_token": "Maker"
+        },
+        "into_account": {
+          "role_token": "Maker"
+        },
+        "of_token": {
+          "currency_symbol": "",
+          "token_name": "SUI"
+        }
+      },
+      "then": {
+        "when": [
+          {
+            "case": {
+              "deposits": 300,
+              "party": {
+                "role_token": "Taker"
+              },
+              "into_account": {
+                "role_token": "Taker"
+              },
+              "of_token": {
+                "currency_symbol": "",
+                "token_name": "USDC"
+              }
+            },
+            "then": {
+              "pay": 100,
+              "from_account": {
+                "role_token": "Maker"
+              },
+              "to": {
+                "party": {
+                  "role_token": "Taker"
+                }
+              },
+              "token": {
+                "currency_symbol": "",
+                "token_name": "SUI"
+              },
+              "then": {
+                "pay": 300,
+                "from_account": {
+                  "role_token": "Taker"
+                },
+                "to": {
+                  "party": {
+                    "role_token": "Maker"
+                  }
+                },
+                "token": {
+                  "currency_symbol": "",
+                  "token_name": "USDC"
+                },
+                "then": "close"
+              }
+            }
+          }
+        ],
+        "timeout": 1774223999,
+        "timeout_continuation": "close"
+      }
+    },
+    {
+      "case": {
+        "deposits": 300,
+        "party": {
+          "role_token": "Taker"
+        },
+        "into_account": {
+          "role_token": "Taker"
+        },
+        "of_token": {
+          "currency_symbol": "",
+          "token_name": "USDC"
+        }
+      },
+      "then": {
+        "when": [
+          {
+            "case": {
+              "deposits": 100,
+              "party": {
+                "role_token": "Maker"
+              },
+              "into_account": {
+                "role_token": "Maker"
+              },
+              "of_token": {
+                "currency_symbol": "",
+                "token_name": "SUI"
+              }
+            },
+            "then": {
+              "pay": 100,
+              "from_account": {
+                "role_token": "Maker"
+              },
+              "to": {
+                "party": {
+                  "role_token": "Taker"
+                }
+              },
+              "token": {
+                "currency_symbol": "",
+                "token_name": "SUI"
+              },
+              "then": {
+                "pay": 300,
+                "from_account": {
+                  "role_token": "Taker"
+                },
+                "to": {
+                  "party": {
+                    "role_token": "Maker"
+                  }
+                },
+                "token": {
+                  "currency_symbol": "",
+                  "token_name": "USDC"
+                },
+                "then": "close"
+              }
+            }
+          }
+        ],
+        "timeout": 1774223999,
+        "timeout_continuation": "close"
+      }
+    }
+  ],
+  "timeout": 1774051199,
+  "timeout_continuation": "close"
+}

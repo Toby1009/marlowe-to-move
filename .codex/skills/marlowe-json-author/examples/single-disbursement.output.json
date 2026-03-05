@@ -1,0 +1,26 @@
+{
+  "status": "ok",
+  "contract": {
+    "when": [
+      {
+        "case": {
+          "deposits": 1000000,
+          "party": {"role_token": "Applicant"},
+          "into_account": {"role_token": "Applicant"},
+          "of_token": {"currency_symbol": "", "token_name": "USDC"}
+        },
+        "then": {
+          "pay": 5000000,
+          "from_account": {"role_token": "Agency"},
+          "to": {"party": {"role_token": "Applicant"}},
+          "token": {"currency_symbol": "", "token_name": "USDC"},
+          "then": "close"
+        }
+      }
+    ],
+    "timeout": 1780271999,
+    "timeout_continuation": "close"
+  },
+  "notes": ["Converted all values to minor units."],
+  "assumptions": []
+}

@@ -1,0 +1,506 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/marlowe-core-contract.schema.json",
+  "title": "Marlowe Core Contract (Constrained Subset)",
+  "oneOf": [
+    {
+      "type": "string",
+      "const": "close"
+    },
+    {
+      "$ref": "#/$defs/ContractNode"
+    }
+  ],
+  "$defs": {
+    "ContractNode": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/PayContract"
+        },
+        {
+          "$ref": "#/$defs/IfContract"
+        },
+        {
+          "$ref": "#/$defs/WhenContract"
+        }
+      ]
+    },
+    "Party": {
+      "type": "object",
+      "required": ["role_token"],
+      "additionalProperties": false,
+      "properties": {
+        "role_token": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "Token": {
+      "type": "object",
+      "required": ["currency_symbol", "token_name"],
+      "additionalProperties": false,
+      "properties": {
+        "currency_symbol": {
+          "type": "string"
+        },
+        "token_name": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "ChoiceId": {
+      "type": "object",
+      "required": ["choice_name", "choice_owner"],
+      "additionalProperties": false,
+      "properties": {
+        "choice_name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "choice_owner": {
+          "$ref": "#/$defs/Party"
+        }
+      }
+    },
+    "Bound": {
+      "type": "object",
+      "required": ["from", "to"],
+      "additionalProperties": false,
+      "properties": {
+        "from": {
+          "type": "integer"
+        },
+        "to": {
+          "type": "integer"
+        }
+      }
+    },
+    "Payee": {
+      "type": "object",
+      "oneOf": [
+        {
+          "required": ["account"],
+          "additionalProperties": false,
+          "properties": {
+            "account": {
+              "$ref": "#/$defs/Party"
+            }
+          }
+        },
+        {
+          "required": ["party"],
+          "additionalProperties": false,
+          "properties": {
+            "party": {
+              "$ref": "#/$defs/Party"
+            }
+          }
+        }
+      ]
+    },
+    "Value": {
+      "oneOf": [
+        {
+          "type": "integer"
+        },
+        {
+          "type": "string",
+          "enum": ["time_interval_start", "time_interval_end"]
+        },
+        {
+          "type": "object",
+          "oneOf": [
+            {
+              "required": ["constant"],
+              "additionalProperties": false,
+              "properties": {
+                "constant": {
+                  "type": "integer"
+                }
+              }
+            },
+            {
+              "required": ["amount_of_token", "in_account"],
+              "additionalProperties": false,
+              "properties": {
+                "amount_of_token": {
+                  "$ref": "#/$defs/Token"
+                },
+                "in_account": {
+                  "$ref": "#/$defs/Party"
+                }
+              }
+            },
+            {
+              "required": ["value_of_choice"],
+              "additionalProperties": false,
+              "properties": {
+                "value_of_choice": {
+                  "$ref": "#/$defs/ChoiceId"
+                }
+              }
+            },
+            {
+              "required": ["add", "and"],
+              "additionalProperties": false,
+              "properties": {
+                "add": {
+                  "$ref": "#/$defs/Value"
+                },
+                "and": {
+                  "$ref": "#/$defs/Value"
+                }
+              }
+            },
+            {
+              "required": ["value", "minus"],
+              "additionalProperties": false,
+              "properties": {
+                "value": {
+                  "$ref": "#/$defs/Value"
+                },
+                "minus": {
+                  "$ref": "#/$defs/Value"
+                }
+              }
+            },
+            {
+              "required": ["multiply", "times"],
+              "additionalProperties": false,
+              "properties": {
+                "multiply": {
+                  "$ref": "#/$defs/Value"
+                },
+                "times": {
+                  "$ref": "#/$defs/Value"
+                }
+              }
+            },
+            {
+              "required": ["divide", "by"],
+              "additionalProperties": false,
+              "properties": {
+                "divide": {
+                  "$ref": "#/$defs/Value"
+                },
+                "by": {
+                  "$ref": "#/$defs/Value"
+                }
+              }
+            },
+            {
+              "required": ["negate"],
+              "additionalProperties": false,
+              "properties": {
+                "negate": {
+                  "$ref": "#/$defs/Value"
+                }
+              }
+            },
+            {
+              "required": ["use_value"],
+              "additionalProperties": false,
+              "properties": {
+                "use_value": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            },
+            {
+              "required": ["if", "then", "else"],
+              "additionalProperties": false,
+              "properties": {
+                "if": {
+                  "$ref": "#/$defs/Observation"
+                },
+                "then": {
+                  "$ref": "#/$defs/Value"
+                },
+                "else": {
+                  "$ref": "#/$defs/Value"
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "Observation": {
+      "oneOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "object",
+          "oneOf": [
+            {
+              "required": ["both", "and"],
+              "additionalProperties": false,
+              "properties": {
+                "both": {
+                  "$ref": "#/$defs/Observation"
+                },
+                "and": {
+                  "$ref": "#/$defs/Observation"
+                }
+              }
+            },
+            {
+              "required": ["either", "or"],
+              "additionalProperties": false,
+              "properties": {
+                "either": {
+                  "$ref": "#/$defs/Observation"
+                },
+                "or": {
+                  "$ref": "#/$defs/Observation"
+                }
+              }
+            },
+            {
+              "required": ["not"],
+              "additionalProperties": false,
+              "properties": {
+                "not": {
+                  "$ref": "#/$defs/Observation"
+                }
+              }
+            },
+            {
+              "required": ["chose_something_for"],
+              "additionalProperties": false,
+              "properties": {
+                "chose_something_for": {
+                  "$ref": "#/$defs/ChoiceId"
+                }
+              }
+            },
+            {
+              "required": ["value", "ge_than"],
+              "additionalProperties": false,
+              "properties": {
+                "value": {
+                  "$ref": "#/$defs/Value"
+                },
+                "ge_than": {
+                  "$ref": "#/$defs/Value"
+                }
+              }
+            },
+            {
+              "required": ["value", "gt"],
+              "additionalProperties": false,
+              "properties": {
+                "value": {
+                  "$ref": "#/$defs/Value"
+                },
+                "gt": {
+                  "$ref": "#/$defs/Value"
+                }
+              }
+            },
+            {
+              "required": ["value", "lt"],
+              "additionalProperties": false,
+              "properties": {
+                "value": {
+                  "$ref": "#/$defs/Value"
+                },
+                "lt": {
+                  "$ref": "#/$defs/Value"
+                }
+              }
+            },
+            {
+              "required": ["value", "le_than"],
+              "additionalProperties": false,
+              "properties": {
+                "value": {
+                  "$ref": "#/$defs/Value"
+                },
+                "le_than": {
+                  "$ref": "#/$defs/Value"
+                }
+              }
+            },
+            {
+              "required": ["value", "equal_to"],
+              "additionalProperties": false,
+              "properties": {
+                "value": {
+                  "$ref": "#/$defs/Value"
+                },
+                "equal_to": {
+                  "$ref": "#/$defs/Value"
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "Action": {
+      "type": "object",
+      "oneOf": [
+        {
+          "required": ["deposits", "party", "into_account", "of_token"],
+          "additionalProperties": false,
+          "properties": {
+            "deposits": {
+              "$ref": "#/$defs/Value"
+            },
+            "party": {
+              "$ref": "#/$defs/Party"
+            },
+            "into_account": {
+              "$ref": "#/$defs/Party"
+            },
+            "of_token": {
+              "$ref": "#/$defs/Token"
+            }
+          }
+        },
+        {
+          "required": ["for_choice", "choose_between"],
+          "additionalProperties": false,
+          "properties": {
+            "for_choice": {
+              "$ref": "#/$defs/ChoiceId"
+            },
+            "choose_between": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "$ref": "#/$defs/Bound"
+              }
+            }
+          }
+        },
+        {
+          "required": ["notify_if"],
+          "additionalProperties": false,
+          "properties": {
+            "notify_if": {
+              "$ref": "#/$defs/Observation"
+            }
+          }
+        }
+      ]
+    },
+    "Case": {
+      "type": "object",
+      "required": ["case", "then"],
+      "additionalProperties": false,
+      "properties": {
+        "case": {
+          "$ref": "#/$defs/Action"
+        },
+        "then": {
+          "oneOf": [
+            {
+              "type": "string",
+              "const": "close"
+            },
+            {
+              "$ref": "#/$defs/ContractNode"
+            }
+          ]
+        }
+      }
+    },
+    "PayContract": {
+      "type": "object",
+      "required": ["pay", "from_account", "to", "token", "then"],
+      "additionalProperties": false,
+      "properties": {
+        "pay": {
+          "$ref": "#/$defs/Value"
+        },
+        "from_account": {
+          "$ref": "#/$defs/Party"
+        },
+        "to": {
+          "$ref": "#/$defs/Payee"
+        },
+        "token": {
+          "$ref": "#/$defs/Token"
+        },
+        "then": {
+          "oneOf": [
+            {
+              "type": "string",
+              "const": "close"
+            },
+            {
+              "$ref": "#/$defs/ContractNode"
+            }
+          ]
+        }
+      }
+    },
+    "IfContract": {
+      "type": "object",
+      "required": ["if", "then", "else"],
+      "additionalProperties": false,
+      "properties": {
+        "if": {
+          "$ref": "#/$defs/Observation"
+        },
+        "then": {
+          "oneOf": [
+            {
+              "type": "string",
+              "const": "close"
+            },
+            {
+              "$ref": "#/$defs/ContractNode"
+            }
+          ]
+        },
+        "else": {
+          "oneOf": [
+            {
+              "type": "string",
+              "const": "close"
+            },
+            {
+              "$ref": "#/$defs/ContractNode"
+            }
+          ]
+        }
+      }
+    },
+    "WhenContract": {
+      "type": "object",
+      "required": ["when", "timeout", "timeout_continuation"],
+      "additionalProperties": false,
+      "properties": {
+        "when": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/Case"
+          }
+        },
+        "timeout": {
+          "type": "integer",
+          "minimum": 946684800
+        },
+        "timeout_continuation": {
+          "oneOf": [
+            {
+              "type": "string",
+              "const": "close"
+            },
+            {
+              "$ref": "#/$defs/ContractNode"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,62 @@
+{
+  "when": [
+    {
+      "case": {
+        "deposits": { "constant": 1000 },
+        "party": { "role_token": "Buyer" },
+        "of_token": { "currency_symbol": "test::mock_usdc::USDC", "token_name": "USDC" },
+        "into_account": { "role_token": "Buyer" }
+      },
+        "then": {
+          "when": [
+            {
+              "case": {
+                "for_choice": {
+                  "choice_name": "escrow_decision",
+                  "choice_owner": { "role_token": "Mediator" }
+                },
+                "choose_between": [
+                  { "from": 0, "to": 1 }
+                ]
+              },
+              "then": {
+                "if": {
+                  "value": {
+                    "value_of_choice": {
+                      "choice_name": "escrow_decision",
+                      "choice_owner": { "role_token": "Mediator" }
+                    }
+                  },
+                  "equal_to": { "constant": 1 }
+                },
+                "then": {
+                  "pay": { "constant": 1000 },
+                  "from_account": { "role_token": "Buyer" },
+                  "to": { "party": { "role_token": "Seller" } },
+                  "token": { "currency_symbol": "test::mock_usdc::USDC", "token_name": "USDC" },
+                  "then": "close"
+                },
+                "else": {
+                  "pay": { "constant": 1000 },
+                  "from_account": { "role_token": "Buyer" },
+                  "to": { "party": { "role_token": "Buyer" } },
+                  "token": { "currency_symbol": "test::mock_usdc::USDC", "token_name": "USDC" },
+                  "then": "close"
+                }
+              }
+            }
+          ],
+        "timeout": 1800403200000,
+        "timeout_continuation": {
+          "pay": { "constant": 1000 },
+          "from_account": { "role_token": "Buyer" },
+          "to": { "party": { "role_token": "Buyer" } },
+          "token": { "currency_symbol": "test::mock_usdc::USDC", "token_name": "USDC" },
+          "then": "close"
+        }
+      }
+    }
+  ],
+  "timeout": 1799971200000,
+  "timeout_continuation": "close"
+}

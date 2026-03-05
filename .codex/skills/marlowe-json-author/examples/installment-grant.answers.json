@@ -1,0 +1,24 @@
+{
+  "roles": {
+    "applicant": "Applicant",
+    "reviewer": "Agency"
+  },
+  "single_token": {
+    "currency_symbol": "",
+    "token_name": "USDC"
+  },
+  "timeout_mapping": {
+    "deposit_deadline": 1777593599,
+    "review_deadline": 1778889599
+  },
+  "amount_mapping": {
+    "deposit": 1000000,
+    "payout": 5000000,
+    "refund": 1000000
+  },
+  "choice": {
+    "name": "review_result",
+    "approve_value": 1,
+    "reject_value": 0
+  }
+}

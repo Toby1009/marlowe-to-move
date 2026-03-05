@@ -37,6 +37,7 @@ module test::swap_ada {
     const OP_GET_ACC: u8 = 10; // +len +bytes +len +bytes
     const OP_GET_CHOICE: u8 = 11; // +len +bytes
     const OP_USE_VAL: u8 = 12; // +len +bytes
+    const OP_HAS_CHOICE: u8 = 13; // +len +bytes -> bool(u64)
     const OP_TIME_START: u8 = 20;
     const OP_TIME_END: u8 = 21;
     const OP_GT: u8 = 30;
@@ -94,6 +95,13 @@ module test::swap_ada {
 
     #[test_only]
     public fun mint_role_for_testing(contract: &mut Contract, name: String, recipient: address, ctx: &mut TxContext) {
+        // Keep Role(name) -> recipient synchronized for Pay-to-Role flows.
+        if (table::contains(&contract.role_registry, name)) {
+            *table::borrow_mut(&mut contract.role_registry, name) = recipient;
+        } else {
+            table::add(&mut contract.role_registry, name, recipient);
+        };
+
         let role_nft = RoleNFT {
             id: object::new(ctx),
             contract_id: object::id(contract),
@@ -111,11 +119,18 @@ module test::swap_ada {
     /// @dev Only Admin can mint roles
     public fun mint_role(
         _: &AdminCap,
-        contract: &Contract,
+        contract: &mut Contract,
         name: String,
         recipient: address,
         ctx: &mut TxContext
     ) {
+        // Keep Role(name) -> recipient synchronized for Pay-to-Role flows.
+        if (table::contains(&contract.role_registry, name)) {
+            *table::borrow_mut(&mut contract.role_registry, name) = recipient;
+        } else {
+            table::add(&mut contract.role_registry, name, recipient);
+        };
+
         let role_nft = RoleNFT {
             id: object::new(ctx),
             contract_id: object::id(contract),
@@ -298,6 +313,15 @@ module test::swap_ada {
                 i = i + c_len;
                 let val = internal_get_choice(contract, string::utf8(choice_bytes));
                 vector::push_back(&mut stack, val);
+            } else if (op == OP_HAS_CHOICE) {
+                let c_len = (*vector::borrow(&bytecode, i) as u64);
+                i = i + 1;
+                let choice_bytes = vector::empty<u8>();
+                let k = 0;
+                while (k < c_len) { vector::push_back(&mut choice_bytes, *vector::borrow(&bytecode, i+k)); k = k + 1; };
+                i = i + c_len;
+                let has_val = internal_has_choice(contract, string::utf8(choice_bytes));
+                vector::push_back(&mut stack, if (has_val) 1 else 0);
             } else if (op == OP_USE_VAL) {
                 let v_len = (*vector::borrow(&bytecode, i) as u64);
                 i = i + 1;
@@ -311,6 +335,10 @@ module test::swap_ada {
                 vector::push_back(&mut stack, tx_context::epoch_timestamp_ms(ctx));
             } else if (op == OP_TIME_END) {
                 vector::push_back(&mut stack, tx_context::epoch_timestamp_ms(ctx)); // Sim
+            } else if (op == OP_NOT) {
+                 assert!(vector::length(&stack) >= 1, E_STACK_UNDERFLOW);
+                 let lhs = vector::pop_back(&mut stack);
+                 vector::push_back(&mut stack, if (lhs == 0) 1 else 0);
             } else if (op == OP_CJUMP) {
                  assert!(vector::length(&stack) >= 1, E_STACK_UNDERFLOW);
                  let cond = vector::pop_back(&mut stack);
@@ -334,14 +362,7 @@ module test::swap_ada {
                  else if (op == OP_GE) { if (lhs >= rhs) 1 else 0 }
                  else if (op == OP_AND) { if (lhs > 0 && rhs > 0) 1 else 0 }
                  else if (op == OP_OR) { if (lhs > 0 || rhs > 0) 1 else 0 }
-                 else if (op == OP_NOT) { if (lhs == 0) 1 else 0 } // Unary actually... wait
                  else { 0 };
-                 
-                 // Fix for Unary NOT (NOT pops 2 which is WRONG).
-                 // If op was NOT, we popped 2 which is WRONG.
-                 // Correcting...
-                 // Re-push if we made a mistake?
-                 // Let's split NOT out.
                  vector::push_back(&mut stack, res);
             };
         };

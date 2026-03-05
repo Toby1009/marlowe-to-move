@@ -1,0 +1,47 @@
+{
+  "when": [
+    {
+      "case": {
+        "deposits": 500,
+        "party": {"role_token": "BackerA"},
+        "into_account": {"role_token": "BackerA"},
+        "of_token": {"currency_symbol": "", "token_name": "USDC"}
+      },
+      "then": {
+        "when": [
+          {
+            "case": {
+              "deposits": 500,
+              "party": {"role_token": "BackerB"},
+              "into_account": {"role_token": "BackerB"},
+              "of_token": {"currency_symbol": "", "token_name": "USDC"}
+            },
+            "then": {
+              "pay": 500,
+              "from_account": {"role_token": "BackerA"},
+              "to": {"party": {"role_token": "Creator"}},
+              "token": {"currency_symbol": "", "token_name": "USDC"},
+              "then": {
+                "pay": 500,
+                "from_account": {"role_token": "BackerB"},
+                "to": {"party": {"role_token": "Creator"}},
+                "token": {"currency_symbol": "", "token_name": "USDC"},
+                "then": "close"
+              }
+            }
+          }
+        ],
+        "timeout": 1782863999,
+        "timeout_continuation": {
+          "pay": 500,
+          "from_account": {"role_token": "BackerA"},
+          "to": {"party": {"role_token": "BackerA"}},
+          "token": {"currency_symbol": "", "token_name": "USDC"},
+          "then": "close"
+        }
+      }
+    }
+  ],
+  "timeout": 1782000000,
+  "timeout_continuation": "close"
+}

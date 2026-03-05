@@ -1,0 +1,26 @@
+{
+  "status": "ok",
+  "contract": {
+    "when": [
+      {
+        "case": {
+          "deposits": 1000,
+          "party": {"role_token": "Applicant"},
+          "into_account": {"role_token": "Applicant"},
+          "of_token": {"currency_symbol": "", "token_name": "USDC"}
+        },
+        "then": {
+          "pay": 5000,
+          "from_account": {"role_token": "Agency"},
+          "to": {"party": {"role_token": "Applicant"}},
+          "token": {"currency_symbol": "", "token_name": "USDC"},
+          "then": "close"
+        }
+      }
+    ],
+    "timeout": 1772495999,
+    "timeout_continuation": "close"
+  },
+  "notes": ["Replace sample amounts and timeout before deployment."],
+  "assumptions": []
+}

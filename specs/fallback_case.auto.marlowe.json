@@ -1,0 +1,37 @@
+{
+  "when": [
+    {
+      "case": {
+        "deposits": 500,
+        "party": {
+          "role_token": "Buyer"
+        },
+        "into_account": {
+          "role_token": "Buyer"
+        },
+        "of_token": {
+          "currency_symbol": "",
+          "token_name": "SUI"
+        }
+      },
+      "then": {
+        "pay": 500,
+        "from_account": {
+          "role_token": "Buyer"
+        },
+        "to": {
+          "party": {
+            "role_token": "Seller"
+          }
+        },
+        "token": {
+          "currency_symbol": "",
+          "token_name": "SUI"
+        },
+        "then": "close"
+      }
+    }
+  ],
+  "timeout": 1777679999,
+  "timeout_continuation": "close"
+}

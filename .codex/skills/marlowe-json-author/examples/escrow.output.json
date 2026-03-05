@@ -1,0 +1,56 @@
+{
+  "status": "ok",
+  "contract": {
+    "when": [
+      {
+        "case": {
+          "deposits": 1000000,
+          "party": {"role_token": "Buyer"},
+          "into_account": {"role_token": "Buyer"},
+          "of_token": {"currency_symbol": "", "token_name": "USDC"}
+        },
+        "then": {
+          "when": [
+            {
+              "case": {
+                "for_choice": {
+                  "choice_name": "release_funds",
+                  "choice_owner": {"role_token": "Buyer"}
+                },
+                "choose_between": [
+                  {"from": 0, "to": 1}
+                ]
+              },
+              "then": {
+                "if": {
+                  "value": {"value_of_choice": {"choice_name": "release_funds", "choice_owner": {"role_token": "Buyer"}}},
+                  "equal_to": 1
+                },
+                "then": {
+                  "pay": 1000000,
+                  "from_account": {"role_token": "Buyer"},
+                  "to": {"party": {"role_token": "Seller"}},
+                  "token": {"currency_symbol": "", "token_name": "USDC"},
+                  "then": "close"
+                },
+                "else": {
+                  "pay": 1000000,
+                  "from_account": {"role_token": "Buyer"},
+                  "to": {"party": {"role_token": "Buyer"}},
+                  "token": {"currency_symbol": "", "token_name": "USDC"},
+                  "then": "close"
+                }
+              }
+            }
+          ],
+          "timeout": 1775174399,
+          "timeout_continuation": "close"
+        }
+      }
+    ],
+    "timeout": 1772495999,
+    "timeout_continuation": "close"
+  },
+  "notes": ["Choice value 1 means release to Seller, 0 means refund Buyer."],
+  "assumptions": []
+}

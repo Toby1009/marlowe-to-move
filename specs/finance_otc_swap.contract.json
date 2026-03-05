@@ -1,0 +1,50 @@
+{
+  "when": [
+    {
+      "case": {
+        "deposits": { "constant": 1000 },
+        "party": { "role_token": "PartyA" },
+        "of_token": { "currency_symbol": "test::mock_usdc::USDC", "token_name": "USDC" },
+        "into_account": { "role_token": "VaultA" }
+      },
+      "then": {
+        "when": [
+          {
+            "case": {
+              "deposits": { "constant": 1 },
+              "party": { "role_token": "PartyB" },
+              "of_token": { "currency_symbol": "test::mock_eth::ETH", "token_name": "ETH" },
+              "into_account": { "role_token": "VaultB" }
+            },
+            "then": {
+              "pay": { "constant": 1000 },
+              "from_account": { "role_token": "VaultA" },
+              "to": { "party": { "role_token": "PartyB" } },
+              "token": { "currency_symbol": "test::mock_usdc::USDC", "token_name": "USDC" },
+              "then": {
+                "pay": { "constant": 1 },
+                "from_account": { "role_token": "VaultB" },
+                "to": { "party": { "role_token": "PartyA" } },
+                "token": { "currency_symbol": "test::mock_eth::ETH", "token_name": "ETH" },
+                "then": "close"
+              }
+            }
+          }
+        ],
+        "timeout": 1804204800000,
+        "timeout_continuation": {
+          "pay": {
+            "amount_of_token": { "currency_symbol": "test::mock_usdc::USDC", "token_name": "USDC" },
+            "in_account": { "role_token": "VaultA" }
+          },
+          "from_account": { "role_token": "VaultA" },
+          "to": { "party": { "role_token": "PartyA" } },
+          "token": { "currency_symbol": "test::mock_usdc::USDC", "token_name": "USDC" },
+          "then": "close"
+        }
+      }
+    }
+  ],
+  "timeout": 1803859200000,
+  "timeout_continuation": "close"
+}

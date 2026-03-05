@@ -1,0 +1,21 @@
+{
+  "when": [
+    {
+      "case": {
+        "deposits": {"constant": 0},
+        "party": {"role_token": "Buyer"},
+        "into_account": {"role_token": "Buyer"},
+        "of_token": {"currency_symbol": "", "token_name": "USDC"}
+      },
+      "then": {
+        "pay": 100,
+        "from_account": {"role_token": "Buyer"},
+        "to": {"party": {"role_token": "Seller"}},
+        "token": {"currency_symbol": "", "token_name": "SUI"},
+        "then": "close"
+      }
+    }
+  ],
+  "timeout": 10,
+  "timeout_continuation": "close"
+}

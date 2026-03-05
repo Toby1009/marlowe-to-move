@@ -1,6 +1,7 @@
 # (FIXED) Removed incorrect import
 from dataclasses import dataclass, asdict
 import json
+import os
 from typing import Any, Dict, List, Optional, Tuple
 
 # 確保從 marlowe_types 匯入所有需要的類型
@@ -27,6 +28,7 @@ from marlowe_types import (
 
 # 確保您的 parser.py 檔案位於同一目錄或 Python 路徑中
 from parser import parse_contract
+from time_utils import normalize_timeout_to_ms
 
 # --------------------------
 # (NEW) Token Type Mapping Helper
@@ -36,6 +38,7 @@ from parser import parse_contract
 # This can be expanded to include Mainnet addresses.
 TOKEN_MAP = {
     ":": "sui::sui::SUI",
+    ":SUI": "sui::sui::SUI",
     "0x2::sui::SUI:SUI": "sui::sui::SUI", # Explicit
     # Mapping for Swap ADA spec (Mock Dollar)
     "85bb65085bb65085bb65085bb65085bb65085bb65085bb65085bb650:dollar": "test::mock_dollar::DOLLAR",
@@ -43,6 +46,22 @@ TOKEN_MAP = {
     "test::mock_eth::ETH:ETH": "test::mock_eth::ETH",
     "test::mock_usdc::USDC:USDC": "test::mock_usdc::USDC"
 }
+
+
+def load_token_map() -> Dict[str, str]:
+    """Load token map with optional environment overrides."""
+    merged = dict(TOKEN_MAP)
+    inline = os.environ.get("MARLOWE_TOKEN_MAP_JSON", "").strip()
+    if inline:
+        extra = json.loads(inline)
+        if not isinstance(extra, dict):
+            raise ValueError("MARLOWE_TOKEN_MAP_JSON must be a JSON object")
+        for k, v in extra.items():
+            if isinstance(k, str) and isinstance(v, str):
+                merged[k] = v
+            else:
+                raise ValueError("MARLOWE_TOKEN_MAP_JSON entries must be string:string")
+    return merged
 
 def marlowe_token_to_move_type(token_info: Dict[str, str]) -> str:
     """
@@ -54,11 +73,12 @@ def marlowe_token_to_move_type(token_info: Dict[str, str]) -> str:
     """
     currency_symbol = token_info.get("currency_symbol", "")
     token_name = token_info.get("token_name", "")
+    token_map = load_token_map()
     
     # 1. Map Lookup
     map_key = f"{currency_symbol}:{token_name}"
-    if map_key in TOKEN_MAP:
-        return TOKEN_MAP[map_key]
+    if map_key in token_map:
+        return token_map[map_key]
         
     # 2. Heuristic: If symbol is already a fully qualified Move type
     if "::" in currency_symbol:
@@ -68,8 +88,7 @@ def marlowe_token_to_move_type(token_info: Dict[str, str]) -> str:
     if not currency_symbol and not token_name:
         return "sui::sui::SUI"
 
-    print(f"Warning: Could not map Marlowe token to Move type: {token_info}")
-    return "ERROR_UNKNOWN_TOKEN_TYPE"
+    raise ValueError(f"Could not map Marlowe token to Move type: {token_info}")
 
 
 # --------------------------
@@ -289,6 +308,7 @@ def parse_contract_to_infos(
         return (infos, else_stage_end)
 
     if isinstance(contract, When):
+        normalized_timeout = normalize_timeout_to_ms(contract.timeout)
         next_child_stage = stage + 1
         case_next_stages = []
         for case in contract.cases:
@@ -302,7 +322,7 @@ def parse_contract_to_infos(
 
         infos["when"].append(WhenStageInfo(
             stage=stage,
-            timeout=contract.timeout,
+            timeout=normalized_timeout,
             cases_count=len(contract.cases),
             timeout_stage=timeout_stage_start
         ))

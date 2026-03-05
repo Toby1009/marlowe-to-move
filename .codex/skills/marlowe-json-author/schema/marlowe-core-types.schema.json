@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/marlowe-core-types.schema.json",
+  "title": "Marlowe Core Type Fragments",
+  "type": "object",
+  "required": ["parties", "token", "timeouts"],
+  "additionalProperties": false,
+  "properties": {
+    "parties": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["role_token"],
+        "additionalProperties": false,
+        "properties": {
+          "role_token": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "token": {
+      "type": "object",
+      "required": ["currency_symbol", "token_name", "minor_unit"],
+      "additionalProperties": false,
+      "properties": {
+        "currency_symbol": {
+          "type": "string"
+        },
+        "token_name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "minor_unit": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "timeouts": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {
+        "type": "integer",
+        "minimum": 946684800
+      }
+    }
+  }
+}

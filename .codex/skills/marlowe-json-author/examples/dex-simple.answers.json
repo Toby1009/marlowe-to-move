@@ -1,0 +1,24 @@
+{
+  "roles": {
+    "maker": "Maker",
+    "taker": "Taker"
+  },
+  "token_mapping": {
+    "maker_token": {
+      "currency_symbol": "",
+      "token_name": "SUI"
+    },
+    "taker_token": {
+      "currency_symbol": "",
+      "token_name": "USDC"
+    }
+  },
+  "timeout_mapping": {
+    "maker_deadline": 1774051199,
+    "taker_deadline": 1774223999
+  },
+  "amount_mapping": {
+    "maker_deposit": 100,
+    "taker_deposit": 300
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "status": "unsupported_requirement",
+  "items": [
+    {
+      "requirement": "two-token atomic swap (SUI <-> USDC)",
+      "reason": "Current marlowe-json-author MVP subset supports exactly one token per draft."
+    },
+    {
+      "requirement": "free-form participant names (Alice/Bob)",
+      "reason": "Current extraction hints are role-oriented and should be mapped to explicit role_token parties first."
+    }
+  ],
+  "notes": [
+    "Skill invocation confirmed via .codex/skills/marlowe-json-author/scripts/normalize_input.py",
+    "For runnable two-token swap in this repo, see specs/swap_eth_usdc.json"
+  ]
+}

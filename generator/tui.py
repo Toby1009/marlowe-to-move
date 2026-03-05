@@ -29,7 +29,7 @@ except ImportError:
 # Local imports
 from parser import parse_contract
 from fsm_model import parse_contract_to_infos
-from move_generator import generate_module, build_stage_lookup, generate_test_module
+from move_generator import generate_module, build_stage_lookup, generate_test_module, sanitize_module_name
 from ts_generator import generate_ts_sdk
 
 # Path setup
@@ -310,6 +310,7 @@ class MarloweCompilerApp(App):
         spec_path = os.path.join(SPECS_DIR, spec_file)
         
         self.log_message(f"[blue]Building {self.selected_spec}...[/]")
+        module_name = sanitize_module_name(self.selected_spec)
         
         try:
             # Parse
@@ -323,7 +324,7 @@ class MarloweCompilerApp(App):
             self.log_message(f"  Parsed: {len(infos)} stages")
             
             # Generate Move
-            move_code = generate_module(infos, stage_lookup, module_name=self.selected_spec)
+            move_code = generate_module(infos, stage_lookup, module_name=module_name)
             output_path = os.path.join(CONTRACT_DIR, "sources", f"{self.selected_spec}.move")
             os.makedirs(os.path.dirname(output_path), exist_ok=True)
             with open(output_path, "w") as f:
@@ -331,7 +332,7 @@ class MarloweCompilerApp(App):
             self.log_message(f"  Move: [dim]{output_path}[/]")
             
             # Generate Tests
-            test_code = generate_test_module(infos, package_name=self.selected_spec)
+            test_code = generate_test_module(infos, package_name=module_name)
             test_path = os.path.join(CONTRACT_DIR, "tests", f"{self.selected_spec}_tests.move")
             os.makedirs(os.path.dirname(test_path), exist_ok=True)
             with open(test_path, "w") as f:
@@ -339,7 +340,7 @@ class MarloweCompilerApp(App):
             self.log_message(f"  Tests: [dim]{test_path}[/]")
             
             # Generate TypeScript SDK
-            ts_code = generate_ts_sdk(infos, deployment_path=DEPLOYMENT_FILE, module_name=self.selected_spec)
+            ts_code = generate_ts_sdk(infos, deployment_path=DEPLOYMENT_FILE, module_name=module_name)
             ts_path = os.path.join(SDK_DIR, f"{self.selected_spec}_sdk.ts")
             os.makedirs(os.path.dirname(ts_path), exist_ok=True)
             with open(ts_path, "w") as f:

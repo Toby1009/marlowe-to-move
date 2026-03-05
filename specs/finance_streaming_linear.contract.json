@@ -1,0 +1,114 @@
+{
+  "when": [
+    {
+      "case": {
+        "deposits": { "constant": 3000 },
+        "party": { "role_token": "Payer" },
+        "of_token": { "currency_symbol": "test::mock_usdc::USDC", "token_name": "USDC" },
+        "into_account": { "role_token": "StreamVault" }
+      },
+      "then": {
+        "when": [
+          {
+            "case": {
+              "for_choice": {
+                "choice_name": "claim_1",
+                "choice_owner": { "role_token": "Recipient" }
+              },
+              "choose_between": [
+                { "from": 1, "to": 1 }
+              ]
+            },
+            "then": {
+              "pay": { "constant": 1000 },
+              "from_account": { "role_token": "StreamVault" },
+              "to": { "party": { "role_token": "Recipient" } },
+              "token": { "currency_symbol": "test::mock_usdc::USDC", "token_name": "USDC" },
+              "then": {
+                "when": [
+                  {
+                    "case": {
+                      "for_choice": {
+                        "choice_name": "claim_2",
+                        "choice_owner": { "role_token": "Recipient" }
+                      },
+                      "choose_between": [
+                        { "from": 1, "to": 1 }
+                      ]
+                    },
+                    "then": {
+                      "pay": { "constant": 1000 },
+                      "from_account": { "role_token": "StreamVault" },
+                      "to": { "party": { "role_token": "Recipient" } },
+                      "token": { "currency_symbol": "test::mock_usdc::USDC", "token_name": "USDC" },
+                      "then": {
+                        "when": [
+                          {
+                            "case": {
+                              "for_choice": {
+                                "choice_name": "claim_3",
+                                "choice_owner": { "role_token": "Recipient" }
+                              },
+                              "choose_between": [
+                                { "from": 1, "to": 1 }
+                              ]
+                            },
+                            "then": {
+                              "pay": {
+                                "amount_of_token": { "currency_symbol": "test::mock_usdc::USDC", "token_name": "USDC" },
+                                "in_account": { "role_token": "StreamVault" }
+                              },
+                              "from_account": { "role_token": "StreamVault" },
+                              "to": { "party": { "role_token": "Recipient" } },
+                              "token": { "currency_symbol": "test::mock_usdc::USDC", "token_name": "USDC" },
+                              "then": "close"
+                            }
+                          }
+                        ],
+                        "timeout": 1803859200000,
+                        "timeout_continuation": {
+                          "pay": {
+                            "amount_of_token": { "currency_symbol": "test::mock_usdc::USDC", "token_name": "USDC" },
+                            "in_account": { "role_token": "StreamVault" }
+                          },
+                          "from_account": { "role_token": "StreamVault" },
+                          "to": { "party": { "role_token": "Payer" } },
+                          "token": { "currency_symbol": "test::mock_usdc::USDC", "token_name": "USDC" },
+                          "then": "close"
+                        }
+                      }
+                    }
+                  }
+                ],
+                "timeout": 1803513600000,
+                "timeout_continuation": {
+                  "pay": {
+                    "amount_of_token": { "currency_symbol": "test::mock_usdc::USDC", "token_name": "USDC" },
+                    "in_account": { "role_token": "StreamVault" }
+                  },
+                  "from_account": { "role_token": "StreamVault" },
+                  "to": { "party": { "role_token": "Payer" } },
+                  "token": { "currency_symbol": "test::mock_usdc::USDC", "token_name": "USDC" },
+                  "then": "close"
+                }
+              }
+            }
+          }
+        ],
+        "timeout": 1803081600000,
+        "timeout_continuation": {
+          "pay": {
+            "amount_of_token": { "currency_symbol": "test::mock_usdc::USDC", "token_name": "USDC" },
+            "in_account": { "role_token": "StreamVault" }
+          },
+          "from_account": { "role_token": "StreamVault" },
+          "to": { "party": { "role_token": "Payer" } },
+          "token": { "currency_symbol": "test::mock_usdc::USDC", "token_name": "USDC" },
+          "then": "close"
+        }
+      }
+    }
+  ],
+  "timeout": 1802649600000,
+  "timeout_continuation": "close"
+}

@@ -45,11 +45,16 @@ label {
   color: #4b5563;
 }
 
-input, textarea, button {
+.hint {
+  font-size: 11px;
+  color: #6b7280;
+}
+
+input, textarea, button, select {
   font: inherit;
 }
 
-input, textarea {
+input, textarea, select {
   padding: 8px 10px;
   border-radius: 10px;
   border: 1px solid #cbd5f5;

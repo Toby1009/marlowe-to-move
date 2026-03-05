@@ -1,0 +1,16 @@
+{
+  "from_account": {
+    "role_token": "RoleToken"
+  },
+  "to": {
+    "party": {
+      "address": "0x..."
+    }
+  },
+  "token": {
+    "currency_symbol": "",
+    "token_name": ""
+  },
+  "pay": 0,
+  "then": "close"
+}

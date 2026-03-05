@@ -1,0 +1,18 @@
+{
+  "status": "ok",
+  "move_output": "contract/sources/generated_from_skill.move",
+  "metadata": {
+    "module_name": "generated_from_skill",
+    "stage_counts": {
+      "when": 0,
+      "deposit": 0,
+      "choice": 0,
+      "notify": 0,
+      "pay": 0,
+      "if": 0,
+      "let": 0,
+      "assert": 0,
+      "close": 0
+    }
+  }
+}
