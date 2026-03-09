@@ -1,0 +1,239 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "platform-extensions.schema.json",
+  "title": "Marlowe Platform Extensions",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "oracles": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/oracle_requirement"
+      },
+      "default": []
+    },
+    "zkp": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/zkp_requirement"
+      },
+      "default": []
+    }
+  },
+  "$defs": {
+    "binding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "name"
+      ],
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": [
+            "choice",
+            "observation",
+            "choice_or_notify"
+          ]
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "oracle_inputs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "timestamp"
+      ],
+      "properties": {
+        "pair": {
+          "type": "string",
+          "minLength": 1
+        },
+        "feed_key": {
+          "type": "string",
+          "minLength": 1
+        },
+        "timestamp": {
+          "type": "string",
+          "minLength": 1
+        },
+        "max_staleness_sec": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "source_chain": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "oracle_integrity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "signed_by",
+        "signature_scheme",
+        "required_quorum"
+      ],
+      "properties": {
+        "signed_by": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "signature_scheme": {
+          "type": "string",
+          "minLength": 1
+        },
+        "required_quorum": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "oracle_requirement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type",
+        "description",
+        "inputs",
+        "integrity",
+        "bind_to"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "price_feed",
+            "attestation",
+            "cross_chain_message",
+            "custom"
+          ]
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1
+        },
+        "inputs": {
+          "$ref": "#/$defs/oracle_inputs"
+        },
+        "integrity": {
+          "$ref": "#/$defs/oracle_integrity"
+        },
+        "bind_to": {
+          "$ref": "#/$defs/binding"
+        }
+      }
+    },
+    "zkp_verifier": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "chain",
+        "module",
+        "function"
+      ],
+      "properties": {
+        "chain": {
+          "type": "string",
+          "minLength": 1
+        },
+        "module": {
+          "type": "string",
+          "minLength": 1
+        },
+        "function": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "zkp_privacy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "reveals",
+        "hides"
+      ],
+      "properties": {
+        "reveals": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "hides": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "zkp_requirement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "statement",
+        "public_inputs",
+        "proof_system",
+        "verifier",
+        "bind_to",
+        "privacy"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "statement": {
+          "type": "string",
+          "minLength": 1
+        },
+        "public_inputs": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "proof_system": {
+          "type": "string",
+          "enum": [
+            "groth16",
+            "plonk",
+            "halo2",
+            "custom"
+          ]
+        },
+        "verifier": {
+          "$ref": "#/$defs/zkp_verifier"
+        },
+        "bind_to": {
+          "$ref": "#/$defs/binding"
+        },
+        "privacy": {
+          "$ref": "#/$defs/zkp_privacy"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,123 @@
+{
+  "status": "ok",
+  "contract": {
+    "when": [
+      {
+        "case": {
+          "for_choice": {
+            "choice_name": "oracle:fx_usdc_twd",
+            "choice_owner": {
+              "role_token": "Oracle"
+            }
+          },
+          "choose_between": [
+            {
+              "from": 0,
+              "to": 999999
+            }
+          ]
+        },
+        "then": {
+          "when": [
+            {
+              "case": {
+                "for_choice": {
+                  "choice_name": "zk:eligibility_verified",
+                  "choice_owner": {
+                    "role_token": "Verifier"
+                  }
+                },
+                "choose_between": [
+                  {
+                    "from": 0,
+                    "to": 1
+                  }
+                ]
+              },
+              "then": {
+                "if": {
+                  "value": {
+                    "value_of_choice": {
+                      "choice_name": "zk:eligibility_verified",
+                      "choice_owner": {
+                        "role_token": "Verifier"
+                      }
+                    }
+                  },
+                  "equal_to": 1
+                },
+                "then": "close",
+                "else": "close"
+              }
+            }
+          ],
+          "timeout": 1772496000,
+          "timeout_continuation": "close"
+        }
+      }
+    ],
+    "timeout": 1772409600,
+    "timeout_continuation": "close"
+  },
+  "extensions": {
+    "oracles": [
+      {
+        "id": "fx_usdc_twd",
+        "type": "price_feed",
+        "description": "USDC/TWD exchange rate",
+        "inputs": {
+          "pair": "USDC/TWD",
+          "timestamp": "tx_time",
+          "max_staleness_sec": 3600
+        },
+        "integrity": {
+          "signed_by": [
+            "OracleProviderA"
+          ],
+          "signature_scheme": "ed25519",
+          "required_quorum": 1
+        },
+        "bind_to": {
+          "kind": "choice",
+          "name": "oracle:fx_usdc_twd"
+        }
+      }
+    ],
+    "zkp": [
+      {
+        "id": "eligibility_proof",
+        "statement": "Applicant is eligible for the grant",
+        "public_inputs": [
+          "applicant_id_hash",
+          "policy_id"
+        ],
+        "proof_system": "groth16",
+        "verifier": {
+          "chain": "sui",
+          "module": "zk_verifier",
+          "function": "verify_eligibility"
+        },
+        "bind_to": {
+          "kind": "choice",
+          "name": "zk:eligibility_verified"
+        },
+        "privacy": {
+          "reveals": [
+            "eligible_only"
+          ],
+          "hides": [
+            "income",
+            "full_identity"
+          ]
+        }
+      }
+    ]
+  },
+  "notes": [
+    "Oracle and ZKP requirements are declared under extensions only.",
+    "The contract remains pure Marlowe Core JSON."
+  ],
+  "assumptions": [
+    "Oracle receipts and ZKP receipts are lowered later by the Sui integration layer."
+  ]
+}

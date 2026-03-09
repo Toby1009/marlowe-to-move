@@ -28,6 +28,8 @@ except ImportError:
 # Local imports
 from parser import parse_contract
 from fsm_model import parse_contract_to_infos
+from bpmn_generator import generate_bpmn_xml, generate_bpmn_svg
+from bpmn_validate import validate_bpmn_file, validate_bpmn_xml
 from move_generator import (
     generate_module,
     build_stage_lookup,
@@ -41,12 +43,20 @@ from ts_generator import generate_ts_sdk
 SCRIPTS_DIR = os.path.dirname(os.path.abspath(__file__))
 ROOT_DIR = os.path.dirname(SCRIPTS_DIR)
 SPECS_DIR = os.path.join(ROOT_DIR, "specs")
+ARTIFACTS_DIR = os.path.join(ROOT_DIR, "artifacts")
+BPMN_ARTIFACTS_DIR = os.path.join(ARTIFACTS_DIR, "bpmn")
 CONTRACT_DIR = os.path.join(ROOT_DIR, "contract")
 SDK_DIR = os.path.join(ROOT_DIR, "sdk")
 DEPLOYMENT_FILE = os.path.join(ROOT_DIR, "deployments", "deployment.json")
 INTENT_PIPELINE_SCRIPT = os.path.join(SCRIPTS_DIR, "intent_pipeline.py")
 
 console = Console() if RICH_AVAILABLE else None
+
+
+def unwrap_marlowe_payload(payload):
+    if isinstance(payload, dict) and "contract" in payload and isinstance(payload["contract"], (dict, str)):
+        return payload["contract"]
+    return payload
 
 
 def get_specs() -> list[str]:
@@ -132,7 +142,7 @@ def cmd_validate(args):
         
         try:
             with open(json_path, "r") as f:
-                json_data = json.load(f)
+                json_data = unwrap_marlowe_payload(json.load(f))
             
             # Try parsing
             contract_ast = parse_contract(json_data)
@@ -167,7 +177,7 @@ def build_single_spec(
     try:
         # Parse
         with open(json_path, "r") as f:
-            json_data = json.load(f)
+            json_data = unwrap_marlowe_payload(json.load(f))
         
         contract_ast = parse_contract(json_data)
         (infos, _) = parse_contract_to_infos(contract_ast, stage=0)
@@ -389,6 +399,182 @@ def cmd_intent(args):
     return proc.returncode
 
 
+def _derive_bpmn_output_base(spec_file: str, output: Optional[str]) -> tuple[str, str]:
+    module_name_raw = os.path.splitext(spec_file)[0]
+    if output:
+        if output.endswith(".bpmn"):
+            bpmn_path = output
+            base_path = output[: -len(".bpmn")]
+        else:
+            base_path = os.path.join(output, module_name_raw)
+            bpmn_path = f"{base_path}.bpmn"
+    else:
+        base_path = os.path.join(BPMN_ARTIFACTS_DIR, module_name_raw)
+        bpmn_path = f"{base_path}.bpmn"
+    return base_path, bpmn_path
+
+
+def _write_text_file(path: str, content: str) -> None:
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, "w") as f:
+        f.write(content)
+
+
+def _convert_svg_to_png(svg_path: str, png_path: str) -> bool:
+    result = subprocess.run(
+        ["sips", "-s", "format", "png", svg_path, "--out", png_path],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if result.returncode == 0 and os.path.exists(png_path):
+        return True
+
+    output_dir = os.path.dirname(png_path) or "."
+    quicklook = subprocess.run(
+        ["qlmanage", "-t", "-s", "1600", "-o", output_dir, svg_path],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    generated_path = f"{svg_path}.png"
+    if quicklook.returncode == 0 and os.path.exists(generated_path):
+        os.replace(generated_path, png_path)
+        return True
+
+    return False
+
+
+def build_bpmn_for_spec(
+    spec_file: str,
+    output: Optional[str] = None,
+    emit_svg: bool = False,
+    emit_png: bool = False,
+    run_validation: bool = False,
+) -> bool:
+    """Build BPMN artifacts from a single Marlowe spec."""
+    module_name_raw = os.path.splitext(spec_file)[0]
+    json_path = os.path.join(SPECS_DIR, spec_file)
+
+    try:
+        with open(json_path, "r") as f:
+            json_data = unwrap_marlowe_payload(json.load(f))
+
+        contract_ast = parse_contract(json_data)
+        bpmn_xml = generate_bpmn_xml(contract_ast, process_name=module_name_raw)
+        base_path, bpmn_path = _derive_bpmn_output_base(spec_file, output)
+        _write_text_file(bpmn_path, bpmn_xml)
+
+        if emit_svg or emit_png:
+            svg_path = f"{base_path}.svg"
+            svg_text = generate_bpmn_svg(contract_ast, process_name=module_name_raw)
+            _write_text_file(svg_path, svg_text)
+            if emit_png:
+                png_path = f"{base_path}.png"
+                if not _convert_svg_to_png(svg_path, png_path):
+                    print_error(f"PNG conversion failed for {module_name_raw}")
+                    return False
+
+        if run_validation:
+            errors, warnings = validate_bpmn_xml(bpmn_xml)
+            if warnings:
+                for warning in warnings:
+                    print_info(f"{module_name_raw} BPMN warning: {warning}")
+            if errors:
+                for error in errors:
+                    print_error(f"{module_name_raw} BPMN invalid: {error}")
+                return False
+
+        return True
+    except Exception as e:
+        print_error(f"BPMN generation failed for {module_name_raw}: {e}")
+        return False
+
+
+def cmd_bpmn(args):
+    """Build BPMN XML from Marlowe specs."""
+    specs = get_specs()
+
+    if args.spec:
+        target_file = f"{args.spec}.json" if not args.spec.endswith(".json") else args.spec
+        if target_file not in specs:
+            print_error(f"Spec '{args.spec}' not found")
+            return 1
+        target_specs = [target_file]
+    else:
+        target_specs = specs
+
+    if not target_specs:
+        print_error("No specs to convert")
+        return 1
+
+    success_count = 0
+    fail_count = 0
+
+    for spec in target_specs:
+        name = os.path.splitext(spec)[0]
+        output = args.output
+        if output and len(target_specs) > 1 and output.endswith(".bpmn"):
+            print_error("--output must be a directory when converting multiple specs")
+            return 1
+
+        if build_bpmn_for_spec(
+            spec,
+            output,
+            emit_svg=args.svg or args.png,
+            emit_png=args.png,
+            run_validation=args.validate,
+        ):
+            print_success(f"Generated BPMN for {name}")
+            success_count += 1
+        else:
+            fail_count += 1
+
+    print()
+    print_info(f"BPMN generation complete: {success_count} succeeded, {fail_count} failed")
+    return 0 if fail_count == 0 else 1
+
+
+def cmd_validate_bpmn(args):
+    """Validate BPMN files."""
+    targets: list[tuple[str, str]] = []
+    if args.file:
+        targets.append((args.file, args.file))
+    else:
+        specs = get_specs()
+        if args.spec:
+            target_file = f"{args.spec}.json" if not args.spec.endswith(".json") else args.spec
+            if target_file not in specs:
+                print_error(f"Spec '{args.spec}' not found")
+                return 1
+            specs = [target_file]
+        for spec in specs:
+            module_name_raw = os.path.splitext(spec)[0]
+            targets.append((module_name_raw, os.path.join(BPMN_ARTIFACTS_DIR, f"{module_name_raw}.bpmn")))
+
+    success_count = 0
+    fail_count = 0
+    for label, path in targets:
+        if not os.path.exists(path):
+            print_error(f"BPMN file not found: {path}")
+            fail_count += 1
+            continue
+        errors, warnings = validate_bpmn_file(path)
+        for warning in warnings:
+            print_info(f"{label}: {warning}")
+        if errors:
+            for error in errors:
+                print_error(f"{label}: {error}")
+            fail_count += 1
+        else:
+            print_success(f"{label}: BPMN valid")
+            success_count += 1
+
+    print()
+    print_info(f"BPMN validation complete: {success_count} valid, {fail_count} invalid")
+    return 0 if fail_count == 0 else 1
+
+
 def main():
     parser = argparse.ArgumentParser(
         prog="marlowe-cli",
@@ -400,6 +586,8 @@ Examples:
   %(prog)s build                   Build all specs
   %(prog)s build --spec swap_ada   Build specific spec
   %(prog)s validate                Validate all specs
+  %(prog)s bpmn --spec swap_ada    Generate BPMN for a spec
+  %(prog)s validate-bpmn --spec swap_ada
   %(prog)s intent requirements.md  Build from NL requirements
   %(prog)s deploy                  Deploy to Sui network
         """
@@ -415,7 +603,20 @@ Examples:
     validate_parser = subparsers.add_parser("validate", help="Validate spec files")
     validate_parser.add_argument("--spec", "-s", help="Specific spec to validate")
     validate_parser.set_defaults(func=cmd_validate)
-    
+
+    bpmn_parser = subparsers.add_parser("bpmn", help="Generate BPMN XML from specs")
+    bpmn_parser.add_argument("--spec", "-s", help="Specific spec to convert")
+    bpmn_parser.add_argument("--output", "-o", help="Output .bpmn file or directory")
+    bpmn_parser.add_argument("--svg", action="store_true", help="Also render SVG")
+    bpmn_parser.add_argument("--png", action="store_true", help="Also render PNG via sips")
+    bpmn_parser.add_argument("--validate", action="store_true", help="Validate generated BPMN XML")
+    bpmn_parser.set_defaults(func=cmd_bpmn)
+
+    validate_bpmn_parser = subparsers.add_parser("validate-bpmn", help="Validate BPMN XML files")
+    validate_bpmn_parser.add_argument("--spec", "-s", help="Validate BPMN generated from a specific spec")
+    validate_bpmn_parser.add_argument("--file", "-f", help="Validate a direct .bpmn file path")
+    validate_bpmn_parser.set_defaults(func=cmd_validate_bpmn)
+
     # Build command
     build_parser = subparsers.add_parser("build", help="Build Move contracts from specs")
     build_parser.add_argument("--spec", "-s", help="Specific spec to build")

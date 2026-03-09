@@ -1,6 +1,9 @@
 import * as Blockly from 'blockly';
 
 type BlockJson = Blockly.BlockDefinition;
+type DropdownOption = [string, string];
+
+const MISSING_BIND_TARGET_VALUE = '__missing_bind_target__';
 
 const blocks: BlockJson[] = [
   {
@@ -11,6 +14,20 @@ const blocks: BlockJson[] = [
     ],
     colour: 290,
     tooltip: 'Root container for a Marlowe contract',
+  },
+  {
+    type: 'extensions_root',
+    message0: 'Extensions Root',
+    message1: 'Oracle extensions %1',
+    args1: [
+      { type: 'input_statement', name: 'ORACLES', check: 'OracleRequirement' }
+    ],
+    message2: 'ZKP extensions %1',
+    args2: [
+      { type: 'input_statement', name: 'ZKPS', check: 'ZkpRequirement' }
+    ],
+    colour: 20,
+    tooltip: 'Optional top-level platform extensions for Oracle and ZKP requirements',
   },
   {
     type: 'contract_close',
@@ -394,8 +411,166 @@ const blocks: BlockJson[] = [
   },
 ];
 
+function getChoiceBindOptions(sourceBlock?: Blockly.Block | null): DropdownOption[] {
+  const workspace = sourceBlock?.workspace;
+  if (!workspace) {
+    return [['Define ChoiceId in Contract Root first', MISSING_BIND_TARGET_VALUE]];
+  }
+
+  const names = new Set<string>();
+  for (const block of workspace.getAllBlocks(false)) {
+    if (block.type !== 'choice_id') {
+      continue;
+    }
+    const name = String(block.getFieldValue('NAME') ?? '').trim();
+    if (name) {
+      names.add(name);
+    }
+  }
+
+  const options = Array.from(names)
+    .sort((lhs, rhs) => lhs.localeCompare(rhs))
+    .map((name): DropdownOption => [name, name]);
+
+  if (options.length === 0) {
+    return [['Define ChoiceId in Contract Root first', MISSING_BIND_TARGET_VALUE]];
+  }
+  return options;
+}
+
+function bindNameDropdown() {
+  return new Blockly.FieldDropdown(function (this: Blockly.FieldDropdown) {
+    const options = getChoiceBindOptions(this.getSourceBlock());
+    const currentValue = String(this.getValue() ?? '').trim();
+    if (
+      currentValue &&
+      currentValue !== MISSING_BIND_TARGET_VALUE &&
+      !options.some(([, value]) => value === currentValue)
+    ) {
+      return [[currentValue, currentValue], ...options];
+    }
+    return options;
+  });
+}
+
+function registerExtensionBlocks() {
+  Blockly.Blocks.ext_oracle_requirement = {
+    init() {
+      this.appendDummyInput()
+        .appendField('Oracle requirement');
+      this.appendDummyInput()
+        .appendField('id')
+        .appendField(new Blockly.FieldTextInput('fx_usdc_twd'), 'ID')
+        .appendField('type')
+        .appendField(
+          new Blockly.FieldDropdown([
+            ['price_feed', 'price_feed'],
+            ['attestation', 'attestation'],
+            ['cross_chain_message', 'cross_chain_message'],
+            ['custom', 'custom'],
+          ]),
+          'TYPE'
+        );
+      this.appendDummyInput()
+        .appendField('description')
+        .appendField(new Blockly.FieldTextInput('USDC/TWD exchange rate'), 'DESCRIPTION');
+      this.appendDummyInput()
+        .appendField('pair')
+        .appendField(new Blockly.FieldTextInput('USDC/TWD'), 'PAIR')
+        .appendField('feed key')
+        .appendField(new Blockly.FieldTextInput('chainlink.fx.usdc_twd'), 'FEED_KEY');
+      this.appendDummyInput()
+        .appendField('timestamp')
+        .appendField(new Blockly.FieldTextInput('tx_time'), 'TIMESTAMP')
+        .appendField('max staleness sec')
+        .appendField(new Blockly.FieldNumber(3600, 0, undefined, 1), 'MAX_STALENESS_SEC');
+      this.appendDummyInput()
+        .appendField('source chain')
+        .appendField(new Blockly.FieldTextInput('ethereum'), 'SOURCE_CHAIN');
+      this.appendDummyInput()
+        .appendField('signed by')
+        .appendField(new Blockly.FieldTextInput('OracleProviderA'), 'SIGNED_BY')
+        .appendField('scheme')
+        .appendField(new Blockly.FieldTextInput('ed25519'), 'SIGNATURE_SCHEME')
+        .appendField('quorum')
+        .appendField(new Blockly.FieldNumber(1, 1, undefined, 1), 'REQUIRED_QUORUM');
+      this.appendDummyInput()
+        .appendField('bind kind')
+        .appendField(
+          new Blockly.FieldDropdown([
+            ['choice', 'choice'],
+            ['observation', 'observation'],
+            ['choice_or_notify', 'choice_or_notify'],
+          ]),
+          'BIND_KIND'
+        )
+        .appendField('bind name')
+        .appendField(bindNameDropdown(), 'BIND_NAME');
+      this.setPreviousStatement(true, 'OracleRequirement');
+      this.setNextStatement(true, 'OracleRequirement');
+      this.setColour(15);
+      this.setTooltip('Platform-level Oracle requirement bound to a contract ChoiceId name.');
+    },
+  };
+
+  Blockly.Blocks.ext_zkp_requirement = {
+    init() {
+      this.appendDummyInput()
+        .appendField('ZKP requirement');
+      this.appendDummyInput()
+        .appendField('id')
+        .appendField(new Blockly.FieldTextInput('eligibility_proof'), 'ID')
+        .appendField('proof system')
+        .appendField(
+          new Blockly.FieldDropdown([
+            ['groth16', 'groth16'],
+            ['plonk', 'plonk'],
+            ['halo2', 'halo2'],
+            ['custom', 'custom'],
+          ]),
+          'PROOF_SYSTEM'
+        );
+      this.appendDummyInput()
+        .appendField('statement')
+        .appendField(new Blockly.FieldTextInput('Applicant is eligible for the grant'), 'STATEMENT');
+      this.appendDummyInput()
+        .appendField('public inputs')
+        .appendField(new Blockly.FieldTextInput('applicant_id_hash,policy_id'), 'PUBLIC_INPUTS');
+      this.appendDummyInput()
+        .appendField('verifier chain')
+        .appendField(new Blockly.FieldTextInput('sui'), 'VERIFIER_CHAIN')
+        .appendField('module')
+        .appendField(new Blockly.FieldTextInput('zk_verifier'), 'VERIFIER_MODULE')
+        .appendField('function')
+        .appendField(new Blockly.FieldTextInput('verify_eligibility'), 'VERIFIER_FUNCTION');
+      this.appendDummyInput()
+        .appendField('bind kind')
+        .appendField(
+          new Blockly.FieldDropdown([
+            ['choice', 'choice'],
+            ['choice_or_notify', 'choice_or_notify'],
+            ['observation', 'observation'],
+          ]),
+          'BIND_KIND'
+        )
+        .appendField('bind name')
+        .appendField(bindNameDropdown(), 'BIND_NAME');
+      this.appendDummyInput()
+        .appendField('reveals')
+        .appendField(new Blockly.FieldTextInput('eligible_only'), 'REVEALS')
+        .appendField('hides')
+        .appendField(new Blockly.FieldTextInput('income,full_identity'), 'HIDES');
+      this.setPreviousStatement(true, 'ZkpRequirement');
+      this.setNextStatement(true, 'ZkpRequirement');
+      this.setColour(330);
+      this.setTooltip('Platform-level ZKP requirement bound to a contract ChoiceId name.');
+    },
+  };
+}
+
 export function registerBlocks() {
   Blockly.defineBlocksWithJsonArray(blocks);
+  registerExtensionBlocks();
 }
 
 export const toolbox = {
@@ -407,6 +582,7 @@ export const toolbox = {
       colour: 290,
       contents: [
         { kind: 'block', type: 'contract_root' },
+        { kind: 'block', type: 'extensions_root' },
       ],
     },
     {
@@ -481,6 +657,15 @@ export const toolbox = {
         { kind: 'block', type: 'obs_lt' },
         { kind: 'block', type: 'obs_le' },
         { kind: 'block', type: 'obs_eq' },
+      ],
+    },
+    {
+      kind: 'category',
+      name: 'Extensions',
+      colour: 15,
+      contents: [
+        { kind: 'block', type: 'ext_oracle_requirement' },
+        { kind: 'block', type: 'ext_zkp_requirement' },
       ],
     },
   ],

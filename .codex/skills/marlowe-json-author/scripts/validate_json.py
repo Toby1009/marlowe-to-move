@@ -51,6 +51,12 @@ def unwrap_contract(payload: Any) -> Any:
     return payload
 
 
+def extract_extensions(payload: Any) -> Any | None:
+    if isinstance(payload, dict) and isinstance(payload.get("extensions"), dict):
+        return payload["extensions"]
+    return None
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Validate draft JSON")
     parser.add_argument("contract", help="Path to contract JSON")
@@ -64,13 +70,25 @@ def main() -> int:
         default=str(Path(__file__).resolve().parents[3] / "generator" / "parser.py"),
         help="Local parser.py path"
     )
+    parser.add_argument(
+        "--extensions-schema",
+        default=str(Path(__file__).resolve().parents[1] / "schema" / "platform-extensions.schema.json"),
+        help="Platform extensions schema path"
+    )
     args = parser.parse_args()
 
     payload = json.loads(Path(args.contract).read_text(encoding="utf-8"))
     contract = unwrap_contract(payload)
+    extensions = extract_extensions(payload)
     schema = json.loads(Path(args.schema).read_text(encoding="utf-8"))
 
     errors, warnings = maybe_schema_validate(contract, schema)
+
+    if extensions is not None:
+        extensions_schema = json.loads(Path(args.extensions_schema).read_text(encoding="utf-8"))
+        ext_errors, ext_warnings = maybe_schema_validate(extensions, extensions_schema)
+        errors.extend(ext_errors)
+        warnings.extend(ext_warnings)
 
     parse_error = maybe_parse_contract(contract, Path(args.parser_file))
     if parse_error:

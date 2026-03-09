@@ -1,0 +1,61 @@
+<?xml version='1.0' encoding='utf-8'?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1116" height="500" viewBox="0 0 1116 500">
+  <defs>
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto" markerUnits="strokeWidth">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#334155" />
+    </marker>
+  </defs>
+  <rect x="0" y="0" width="1116" height="500" fill="#ffffff" />
+  <rect x="40" y="40" width="1036" height="420" fill="#f8fafc" stroke="#94a3b8" stroke-width="2" />
+  <rect x="40" y="40" width="1036" height="240" fill="#ffffff" stroke="#cbd5e1" stroke-width="1" />
+  <rect x="40" y="40" width="160" height="240" fill="#e2e8f0" stroke="#cbd5e1" stroke-width="1" />
+  <text x="58" y="68" font-family="monospace" font-size="16" font-weight="700" fill="#0f172a">Contract</text>
+  <rect x="40" y="280" width="1036" height="180" fill="#ffffff" stroke="#cbd5e1" stroke-width="1" />
+  <rect x="40" y="280" width="160" height="180" fill="#e2e8f0" stroke="#cbd5e1" stroke-width="1" />
+  <text x="58" y="308" font-family="monospace" font-size="16" font-weight="700" fill="#0f172a">Voter</text>
+  <polyline points="236,208 288,208 288,215 340,215" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrowhead)" />
+  <polyline points="390,215 475,215 475,360 560,360" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrowhead)" />
+  <polyline points="680,360 730,360 730,105 780,105" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrowhead)" />
+  <polyline points="830,105 915,105 915,98 1000,98" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrowhead)" />
+  <polyline points="830,105 915,105 915,208 1000,208" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrowhead)" />
+  <polyline points="390,215 475,215 475,208 560,208" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrowhead)" />
+  <polyline points="596,208 780,208" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrowhead)" />
+  <g id="startEvent_1">
+    <circle cx="218" cy="208" r="18" fill="#ffffff" stroke="#0f172a" stroke-width="2" />
+    <text x="218" y="208" text-anchor="middle" font-family="monospace" font-size="12" fill="#0f172a">Contract start</text>
+  </g>
+  <g id="eventBasedGateway_2">
+    <polygon points="365,190 390,215 365,240 340,215" fill="#f8fafc" stroke="#0f172a" stroke-width="2" />
+    <text x="365" y="206" text-anchor="middle" font-family="monospace" font-size="12" fill="#0f172a">Await action before</text>
+    <text x="365" y="224" text-anchor="middle" font-family="monospace" font-size="12" fill="#0f172a">2026-04-02T23:59:59Z</text>
+  </g>
+  <g id="receiveTask_3">
+    <rect x="560" y="320" width="120" height="80" rx="12" ry="12" fill="#ffffff" stroke="#0f172a" stroke-width="2" />
+    <text x="620" y="342" text-anchor="middle" font-family="monospace" font-size="12" fill="#0f172a">Receive choice</text>
+    <text x="620" y="360" text-anchor="middle" font-family="monospace" font-size="12" fill="#0f172a">vote_result from Voter</text>
+    <text x="620" y="378" text-anchor="middle" font-family="monospace" font-size="12" fill="#0f172a">[0..1]</text>
+  </g>
+  <g id="exclusiveGateway_4">
+    <polygon points="805,80 830,105 805,130 780,105" fill="#f8fafc" stroke="#0f172a" stroke-width="2" />
+    <text x="805" y="96" text-anchor="middle" font-family="monospace" font-size="12" fill="#0f172a">If choice(vote_result)</text>
+    <text x="805" y="114" text-anchor="middle" font-family="monospace" font-size="12" fill="#0f172a">= 1</text>
+  </g>
+  <g id="endEvent_5">
+    <circle cx="1018" cy="98" r="18" fill="#ffffff" stroke="#0f172a" stroke-width="2" />
+    <text x="1018" y="98" text-anchor="middle" font-family="monospace" font-size="12" fill="#0f172a">Close</text>
+  </g>
+  <g id="endEvent_6">
+    <circle cx="1018" cy="208" r="18" fill="#ffffff" stroke="#0f172a" stroke-width="2" />
+    <text x="1018" y="208" text-anchor="middle" font-family="monospace" font-size="12" fill="#0f172a">Close</text>
+  </g>
+  <g id="intermediateCatchEvent_7">
+    <circle cx="578" cy="208" r="18" fill="#ffffff" stroke="#0f172a" stroke-width="2" />
+    <circle cx="578" cy="208" r="13" fill="none" stroke="#0f172a" stroke-width="1.5" />
+    <text x="578" y="199" text-anchor="middle" font-family="monospace" font-size="12" fill="#0f172a">Timeout at</text>
+    <text x="578" y="217" text-anchor="middle" font-family="monospace" font-size="12" fill="#0f172a">2026-04-02T23:59:59Z</text>
+  </g>
+  <g id="endEvent_8">
+    <circle cx="798" cy="208" r="18" fill="#ffffff" stroke="#0f172a" stroke-width="2" />
+    <text x="798" y="208" text-anchor="middle" font-family="monospace" font-size="12" fill="#0f172a">Close</text>
+  </g>
+</svg>

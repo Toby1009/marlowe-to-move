@@ -61,6 +61,16 @@ input, textarea, select {
   background: #fff;
 }
 
+textarea {
+  min-height: 140px;
+  resize: vertical;
+  line-height: 1.45;
+}
+
+.hidden-file-input {
+  display: none;
+}
+
 button {
   padding: 10px 12px;
   border-radius: 12px;

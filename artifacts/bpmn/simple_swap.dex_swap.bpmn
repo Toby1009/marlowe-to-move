@@ -1,0 +1,333 @@
+<?xml version='1.0' encoding='utf-8'?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="Definitions_MarloweBPMN" targetNamespace="https://marlowe-to-move.local/bpmn">
+  <bpmn:process id="Process_MarloweContract" name="simple_swap.dex_swap" isExecutable="false">
+    <bpmn:documentation>Deterministic BPMN projection of a Marlowe contract. Gateway labels and event names preserve the original Marlowe semantics.</bpmn:documentation>
+    <bpmn:laneSet id="LaneSet_1">
+      <bpmn:lane id="Lane_1" name="Contract">
+        <bpmn:flowNodeRef>serviceTask_6</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>serviceTask_7</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>endEvent_8</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>eventBasedGateway_4</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>intermediateCatchEvent_9</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>endEvent_10</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>serviceTask_14</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>serviceTask_15</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>endEvent_16</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>startEvent_1</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>eventBasedGateway_2</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>eventBasedGateway_12</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>intermediateCatchEvent_17</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>endEvent_18</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>intermediateCatchEvent_19</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>endEvent_20</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="Lane_2" name="Taker">
+        <bpmn:flowNodeRef>receiveTask_5</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>receiveTask_11</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="Lane_3" name="Maker">
+        <bpmn:flowNodeRef>receiveTask_3</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>receiveTask_13</bpmn:flowNodeRef>
+      </bpmn:lane>
+    </bpmn:laneSet>
+    <bpmn:startEvent id="startEvent_1" name="Contract start">
+      <bpmn:outgoing>Flow_1</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:eventBasedGateway id="eventBasedGateway_2" name="Await action before 2026-03-15T23:59:59Z" gatewayDirection="Diverging">
+      <bpmn:incoming>Flow_1</bpmn:incoming>
+      <bpmn:outgoing>Flow_2</bpmn:outgoing>
+      <bpmn:outgoing>Flow_10</bpmn:outgoing>
+      <bpmn:outgoing>Flow_18</bpmn:outgoing>
+      <bpmn:documentation>Marlowe When with 2 case(s) and timeout 2026-03-15T23:59:59Z</bpmn:documentation>
+    </bpmn:eventBasedGateway>
+    <bpmn:receiveTask id="receiveTask_3" name="Receive deposit 125 SUI from Maker">
+      <bpmn:incoming>Flow_2</bpmn:incoming>
+      <bpmn:outgoing>Flow_3</bpmn:outgoing>
+      <bpmn:documentation>into_account=Maker, party=Maker</bpmn:documentation>
+    </bpmn:receiveTask>
+    <bpmn:eventBasedGateway id="eventBasedGateway_4" name="Await action before 2026-03-17T23:59:59Z" gatewayDirection="Diverging">
+      <bpmn:incoming>Flow_3</bpmn:incoming>
+      <bpmn:outgoing>Flow_4</bpmn:outgoing>
+      <bpmn:outgoing>Flow_8</bpmn:outgoing>
+      <bpmn:documentation>Marlowe When with 1 case(s) and timeout 2026-03-17T23:59:59Z</bpmn:documentation>
+    </bpmn:eventBasedGateway>
+    <bpmn:receiveTask id="receiveTask_5" name="Receive deposit 380 USDC from Taker">
+      <bpmn:incoming>Flow_4</bpmn:incoming>
+      <bpmn:outgoing>Flow_5</bpmn:outgoing>
+      <bpmn:documentation>into_account=Taker, party=Taker</bpmn:documentation>
+    </bpmn:receiveTask>
+    <bpmn:serviceTask id="serviceTask_6" name="Pay 125 SUI from Maker to Taker">
+      <bpmn:incoming>Flow_5</bpmn:incoming>
+      <bpmn:outgoing>Flow_6</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:serviceTask id="serviceTask_7" name="Pay 380 USDC from Taker to Maker">
+      <bpmn:incoming>Flow_6</bpmn:incoming>
+      <bpmn:outgoing>Flow_7</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:endEvent id="endEvent_8" name="Close">
+      <bpmn:incoming>Flow_7</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:intermediateCatchEvent id="intermediateCatchEvent_9" name="Timeout at 2026-03-17T23:59:59Z">
+      <bpmn:incoming>Flow_8</bpmn:incoming>
+      <bpmn:outgoing>Flow_9</bpmn:outgoing>
+      <bpmn:documentation>Marlowe timeout branch for UNIX timestamp 1773791999</bpmn:documentation>
+      <bpmn:timerEventDefinition>
+        <bpmn:timeDate>2026-03-17T23:59:59Z</bpmn:timeDate>
+      </bpmn:timerEventDefinition>
+    </bpmn:intermediateCatchEvent>
+    <bpmn:endEvent id="endEvent_10" name="Close">
+      <bpmn:incoming>Flow_9</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:receiveTask id="receiveTask_11" name="Receive deposit 380 USDC from Taker">
+      <bpmn:incoming>Flow_10</bpmn:incoming>
+      <bpmn:outgoing>Flow_11</bpmn:outgoing>
+      <bpmn:documentation>into_account=Taker, party=Taker</bpmn:documentation>
+    </bpmn:receiveTask>
+    <bpmn:eventBasedGateway id="eventBasedGateway_12" name="Await action before 2026-03-17T23:59:59Z" gatewayDirection="Diverging">
+      <bpmn:incoming>Flow_11</bpmn:incoming>
+      <bpmn:outgoing>Flow_12</bpmn:outgoing>
+      <bpmn:outgoing>Flow_16</bpmn:outgoing>
+      <bpmn:documentation>Marlowe When with 1 case(s) and timeout 2026-03-17T23:59:59Z</bpmn:documentation>
+    </bpmn:eventBasedGateway>
+    <bpmn:receiveTask id="receiveTask_13" name="Receive deposit 125 SUI from Maker">
+      <bpmn:incoming>Flow_12</bpmn:incoming>
+      <bpmn:outgoing>Flow_13</bpmn:outgoing>
+      <bpmn:documentation>into_account=Maker, party=Maker</bpmn:documentation>
+    </bpmn:receiveTask>
+    <bpmn:serviceTask id="serviceTask_14" name="Pay 125 SUI from Maker to Taker">
+      <bpmn:incoming>Flow_13</bpmn:incoming>
+      <bpmn:outgoing>Flow_14</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:serviceTask id="serviceTask_15" name="Pay 380 USDC from Taker to Maker">
+      <bpmn:incoming>Flow_14</bpmn:incoming>
+      <bpmn:outgoing>Flow_15</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:endEvent id="endEvent_16" name="Close">
+      <bpmn:incoming>Flow_15</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:intermediateCatchEvent id="intermediateCatchEvent_17" name="Timeout at 2026-03-17T23:59:59Z">
+      <bpmn:incoming>Flow_16</bpmn:incoming>
+      <bpmn:outgoing>Flow_17</bpmn:outgoing>
+      <bpmn:documentation>Marlowe timeout branch for UNIX timestamp 1773791999</bpmn:documentation>
+      <bpmn:timerEventDefinition>
+        <bpmn:timeDate>2026-03-17T23:59:59Z</bpmn:timeDate>
+      </bpmn:timerEventDefinition>
+    </bpmn:intermediateCatchEvent>
+    <bpmn:endEvent id="endEvent_18" name="Close">
+      <bpmn:incoming>Flow_17</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:intermediateCatchEvent id="intermediateCatchEvent_19" name="Timeout at 2026-03-15T23:59:59Z">
+      <bpmn:incoming>Flow_18</bpmn:incoming>
+      <bpmn:outgoing>Flow_19</bpmn:outgoing>
+      <bpmn:documentation>Marlowe timeout branch for UNIX timestamp 1773619199</bpmn:documentation>
+      <bpmn:timerEventDefinition>
+        <bpmn:timeDate>2026-03-15T23:59:59Z</bpmn:timeDate>
+      </bpmn:timerEventDefinition>
+    </bpmn:intermediateCatchEvent>
+    <bpmn:endEvent id="endEvent_20" name="Close">
+      <bpmn:incoming>Flow_19</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flow_1" sourceRef="startEvent_1" targetRef="eventBasedGateway_2" />
+    <bpmn:sequenceFlow id="Flow_2" sourceRef="eventBasedGateway_2" targetRef="receiveTask_3" name="deposit by Maker" />
+    <bpmn:sequenceFlow id="Flow_3" sourceRef="receiveTask_3" targetRef="eventBasedGateway_4" />
+    <bpmn:sequenceFlow id="Flow_4" sourceRef="eventBasedGateway_4" targetRef="receiveTask_5" name="deposit by Taker" />
+    <bpmn:sequenceFlow id="Flow_5" sourceRef="receiveTask_5" targetRef="serviceTask_6" />
+    <bpmn:sequenceFlow id="Flow_6" sourceRef="serviceTask_6" targetRef="serviceTask_7" />
+    <bpmn:sequenceFlow id="Flow_7" sourceRef="serviceTask_7" targetRef="endEvent_8" />
+    <bpmn:sequenceFlow id="Flow_8" sourceRef="eventBasedGateway_4" targetRef="intermediateCatchEvent_9" name="timeout" />
+    <bpmn:sequenceFlow id="Flow_9" sourceRef="intermediateCatchEvent_9" targetRef="endEvent_10" />
+    <bpmn:sequenceFlow id="Flow_10" sourceRef="eventBasedGateway_2" targetRef="receiveTask_11" name="deposit by Taker" />
+    <bpmn:sequenceFlow id="Flow_11" sourceRef="receiveTask_11" targetRef="eventBasedGateway_12" />
+    <bpmn:sequenceFlow id="Flow_12" sourceRef="eventBasedGateway_12" targetRef="receiveTask_13" name="deposit by Maker" />
+    <bpmn:sequenceFlow id="Flow_13" sourceRef="receiveTask_13" targetRef="serviceTask_14" />
+    <bpmn:sequenceFlow id="Flow_14" sourceRef="serviceTask_14" targetRef="serviceTask_15" />
+    <bpmn:sequenceFlow id="Flow_15" sourceRef="serviceTask_15" targetRef="endEvent_16" />
+    <bpmn:sequenceFlow id="Flow_16" sourceRef="eventBasedGateway_12" targetRef="intermediateCatchEvent_17" name="timeout" />
+    <bpmn:sequenceFlow id="Flow_17" sourceRef="intermediateCatchEvent_17" targetRef="endEvent_18" />
+    <bpmn:sequenceFlow id="Flow_18" sourceRef="eventBasedGateway_2" targetRef="intermediateCatchEvent_19" name="timeout" />
+    <bpmn:sequenceFlow id="Flow_19" sourceRef="intermediateCatchEvent_19" targetRef="endEvent_20" />
+  </bpmn:process>
+  <bpmn:collaboration id="Collaboration_MarloweContract">
+    <bpmn:participant id="Participant_MarloweContract" name="simple_swap.dex_swap" processRef="Process_MarloweContract" />
+  </bpmn:collaboration>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_MarloweContract">
+    <bpmndi:BPMNPlane id="BPMNPlane_MarloweContract" bpmnElement="Collaboration_MarloweContract">
+      <bpmndi:BPMNShape id="Participant_MarloweContract_di" bpmnElement="Participant_MarloweContract" isHorizontal="true">
+        <dc:Bounds x="40" y="40" width="1696" height="830" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_1_di" bpmnElement="Lane_1" isHorizontal="true">
+        <dc:Bounds x="40" y="40" width="1696" height="380" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_2_di" bpmnElement="Lane_2" isHorizontal="true">
+        <dc:Bounds x="40" y="420" width="1696" height="270" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_3_di" bpmnElement="Lane_3" isHorizontal="true">
+        <dc:Bounds x="40" y="690" width="1696" height="180" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="startEvent_1_di" bpmnElement="startEvent_1">
+        <dc:Bounds x="200" y="190" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="eventBasedGateway_2_di" bpmnElement="eventBasedGateway_2">
+        <dc:Bounds x="340" y="190" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="receiveTask_3_di" bpmnElement="receiveTask_3">
+        <dc:Bounds x="560" y="730" width="120" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="eventBasedGateway_4_di" bpmnElement="eventBasedGateway_4">
+        <dc:Bounds x="780" y="80" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="receiveTask_5_di" bpmnElement="receiveTask_5">
+        <dc:Bounds x="1000" y="460" width="120" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="serviceTask_6_di" bpmnElement="serviceTask_6">
+        <dc:Bounds x="1220" y="80" width="120" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="serviceTask_7_di" bpmnElement="serviceTask_7">
+        <dc:Bounds x="1440" y="80" width="120" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="endEvent_8_di" bpmnElement="endEvent_8">
+        <dc:Bounds x="1660" y="80" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="intermediateCatchEvent_9_di" bpmnElement="intermediateCatchEvent_9">
+        <dc:Bounds x="1000" y="190" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="endEvent_10_di" bpmnElement="endEvent_10">
+        <dc:Bounds x="1220" y="190" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="receiveTask_11_di" bpmnElement="receiveTask_11">
+        <dc:Bounds x="560" y="570" width="120" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="eventBasedGateway_12_di" bpmnElement="eventBasedGateway_12">
+        <dc:Bounds x="780" y="190" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="receiveTask_13_di" bpmnElement="receiveTask_13">
+        <dc:Bounds x="1000" y="730" width="120" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="serviceTask_14_di" bpmnElement="serviceTask_14">
+        <dc:Bounds x="1220" y="190" width="120" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="serviceTask_15_di" bpmnElement="serviceTask_15">
+        <dc:Bounds x="1440" y="190" width="120" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="endEvent_16_di" bpmnElement="endEvent_16">
+        <dc:Bounds x="1660" y="190" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="intermediateCatchEvent_17_di" bpmnElement="intermediateCatchEvent_17">
+        <dc:Bounds x="1000" y="300" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="endEvent_18_di" bpmnElement="endEvent_18">
+        <dc:Bounds x="1220" y="300" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="intermediateCatchEvent_19_di" bpmnElement="intermediateCatchEvent_19">
+        <dc:Bounds x="560" y="300" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="endEvent_20_di" bpmnElement="endEvent_20">
+        <dc:Bounds x="780" y="300" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_1_di" bpmnElement="Flow_1">
+        <di:waypoint x="236" y="208" />
+        <di:waypoint x="288" y="208" />
+        <di:waypoint x="288" y="215" />
+        <di:waypoint x="340" y="215" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_2_di" bpmnElement="Flow_2">
+        <di:waypoint x="390" y="215" />
+        <di:waypoint x="475" y="215" />
+        <di:waypoint x="475" y="770" />
+        <di:waypoint x="560" y="770" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_3_di" bpmnElement="Flow_3">
+        <di:waypoint x="680" y="770" />
+        <di:waypoint x="730" y="770" />
+        <di:waypoint x="730" y="105" />
+        <di:waypoint x="780" y="105" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_4_di" bpmnElement="Flow_4">
+        <di:waypoint x="830" y="105" />
+        <di:waypoint x="915" y="105" />
+        <di:waypoint x="915" y="500" />
+        <di:waypoint x="1000" y="500" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_5_di" bpmnElement="Flow_5">
+        <di:waypoint x="1120" y="500" />
+        <di:waypoint x="1170" y="500" />
+        <di:waypoint x="1170" y="120" />
+        <di:waypoint x="1220" y="120" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_6_di" bpmnElement="Flow_6">
+        <di:waypoint x="1340" y="120" />
+        <di:waypoint x="1440" y="120" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_7_di" bpmnElement="Flow_7">
+        <di:waypoint x="1560" y="120" />
+        <di:waypoint x="1610" y="120" />
+        <di:waypoint x="1610" y="98" />
+        <di:waypoint x="1660" y="98" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_8_di" bpmnElement="Flow_8">
+        <di:waypoint x="830" y="105" />
+        <di:waypoint x="915" y="105" />
+        <di:waypoint x="915" y="208" />
+        <di:waypoint x="1000" y="208" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_9_di" bpmnElement="Flow_9">
+        <di:waypoint x="1036" y="208" />
+        <di:waypoint x="1220" y="208" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_10_di" bpmnElement="Flow_10">
+        <di:waypoint x="390" y="215" />
+        <di:waypoint x="475" y="215" />
+        <di:waypoint x="475" y="610" />
+        <di:waypoint x="560" y="610" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_11_di" bpmnElement="Flow_11">
+        <di:waypoint x="680" y="610" />
+        <di:waypoint x="730" y="610" />
+        <di:waypoint x="730" y="215" />
+        <di:waypoint x="780" y="215" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_12_di" bpmnElement="Flow_12">
+        <di:waypoint x="830" y="215" />
+        <di:waypoint x="915" y="215" />
+        <di:waypoint x="915" y="770" />
+        <di:waypoint x="1000" y="770" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_13_di" bpmnElement="Flow_13">
+        <di:waypoint x="1120" y="770" />
+        <di:waypoint x="1170" y="770" />
+        <di:waypoint x="1170" y="230" />
+        <di:waypoint x="1220" y="230" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_14_di" bpmnElement="Flow_14">
+        <di:waypoint x="1340" y="230" />
+        <di:waypoint x="1440" y="230" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_15_di" bpmnElement="Flow_15">
+        <di:waypoint x="1560" y="230" />
+        <di:waypoint x="1610" y="230" />
+        <di:waypoint x="1610" y="208" />
+        <di:waypoint x="1660" y="208" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_16_di" bpmnElement="Flow_16">
+        <di:waypoint x="830" y="215" />
+        <di:waypoint x="915" y="215" />
+        <di:waypoint x="915" y="318" />
+        <di:waypoint x="1000" y="318" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_17_di" bpmnElement="Flow_17">
+        <di:waypoint x="1036" y="318" />
+        <di:waypoint x="1220" y="318" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_18_di" bpmnElement="Flow_18">
+        <di:waypoint x="390" y="215" />
+        <di:waypoint x="475" y="215" />
+        <di:waypoint x="475" y="318" />
+        <di:waypoint x="560" y="318" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_19_di" bpmnElement="Flow_19">
+        <di:waypoint x="596" y="318" />
+        <di:waypoint x="780" y="318" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

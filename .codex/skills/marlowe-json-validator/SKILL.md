@@ -6,6 +6,7 @@ description: Validate Marlowe Core JSON drafts for schema correctness, semantic 
 # Purpose
 
 Validate Marlowe JSON before lowering.
+When a payload includes a sibling `extensions` object for Oracle or ZKP requirements, validate Marlowe Core JSON separately from those platform extensions.
 
 Accept JSON input and return one JSON object:
 - `{"status":"valid",...}`
@@ -13,9 +14,10 @@ Accept JSON input and return one JSON object:
 
 # Validation Pipeline
 
-1. Run schema validation against `schema/marlowe-supported-subset.schema.json`.
-2. Run semantic checks with `scripts/validate_marlowe_json.py`.
-3. Return structured errors and warnings with JSON paths.
+1. Run schema validation against `schema/marlowe-supported-subset.schema.json` for the `contract` portion.
+2. If `extensions` are present, validate them against `../marlowe-json-author/schema/platform-extensions.schema.json`.
+3. Run semantic checks with `scripts/validate_marlowe_json.py`.
+4. Return structured errors and warnings with JSON paths.
 
 # Mandatory Checks
 
@@ -39,6 +41,7 @@ Emit warnings for patterns that are legal JSON but high-risk design:
 # Resources
 
 - Schema: `schema/marlowe-supported-subset.schema.json`
+- Platform extensions schema: `../marlowe-json-author/schema/platform-extensions.schema.json`
 - Semantic checks: `references/semantic-checks.md`
 - Runner: `scripts/validate_marlowe_json.py`
 
