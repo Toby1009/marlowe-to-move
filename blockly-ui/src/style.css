@@ -40,6 +40,112 @@ body {
   gap: 8px;
 }
 
+.extensions-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.extension-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid #dbe3ff;
+  border-radius: 14px;
+  background: #fdfdff;
+}
+
+.section-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.section-header h2 {
+  margin: 0;
+  font-size: 15px;
+}
+
+.extension-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.extension-empty {
+  padding: 14px;
+  border: 1px dashed #cbd5f5;
+  border-radius: 12px;
+  background: #f8fafc;
+  color: #64748b;
+  font-size: 12px;
+}
+
+.extension-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid #dbe3ff;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.extension-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.extension-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.extension-grid label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.span-2 {
+  grid-column: span 2;
+}
+
+.result-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.tab-button {
+  padding: 9px 12px;
+  border-radius: 12px;
+  border: 1px solid #cbd5f5;
+  background: #f8f7ff;
+  color: #1f3c88;
+}
+
+.tab-button.active {
+  background: #1f3c88;
+  color: #fff;
+  border-color: #1f3c88;
+}
+
+.result-panel {
+  display: none;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.result-panel.active {
+  display: flex;
+}
+
 label {
   font-size: 12px;
   color: #4b5563;
@@ -71,6 +177,10 @@ textarea {
   display: none;
 }
 
+.hidden {
+  display: none !important;
+}
+
 button {
   padding: 10px 12px;
   border-radius: 12px;
@@ -84,6 +194,19 @@ button.secondary {
   background: #f2f0ff;
   color: #1f3c88;
   border: 1px solid #cbd5f5;
+}
+
+.danger-button {
+  padding: 7px 10px;
+  border-radius: 10px;
+  border: 1px solid #fecaca;
+  background: #fff1f2;
+  color: #b91c1c;
+}
+
+button:disabled {
+  opacity: 0.65;
+  cursor: wait;
 }
 
 .status {
@@ -115,6 +238,97 @@ pre {
   font-size: 12px;
 }
 
+.bpmn-toolbar {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.download-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid #cbd5f5;
+  background: #f8f7ff;
+  color: #1f3c88;
+  text-decoration: none;
+}
+
+.bpmn-diagram {
+  min-height: 260px;
+  max-height: 48vh;
+  overflow: auto;
+  border: 1px solid #dbe3ff;
+  border-radius: 12px;
+  background: #fff;
+  padding: 12px;
+  cursor: zoom-in;
+}
+
+.bpmn-diagram.empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #6b7280;
+  background: #f8fafc;
+  cursor: default;
+}
+
+.bpmn-diagram svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.bpmn-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+}
+
+.bpmn-lightbox-backdrop {
+  width: 100%;
+  height: 100%;
+  background: rgba(15, 23, 42, 0.76);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  box-sizing: border-box;
+}
+
+.bpmn-lightbox-content {
+  width: min(1400px, 100%);
+  max-height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.bpmn-lightbox-hint {
+  color: #e2e8f0;
+  font-size: 12px;
+  text-align: center;
+}
+
+.bpmn-lightbox-diagram {
+  background: #fff;
+  border-radius: 16px;
+  padding: 20px;
+  overflow: auto;
+  max-height: calc(100vh - 100px);
+  box-shadow: 0 24px 80px rgba(15, 23, 42, 0.35);
+}
+
+.bpmn-lightbox-diagram svg {
+  width: auto;
+  min-width: 100%;
+  height: auto;
+  display: block;
+}
+
 @media (max-width: 1000px) {
   #app {
     grid-template-columns: 1fr;
@@ -123,5 +337,22 @@ pre {
 
   #blockly-root {
     height: 60vh;
+  }
+
+  .extension-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .span-2 {
+    grid-column: span 1;
+  }
+
+  .bpmn-lightbox-backdrop {
+    padding: 12px;
+  }
+
+  .bpmn-lightbox-diagram {
+    padding: 12px;
+    max-height: calc(100vh - 72px);
   }
 }

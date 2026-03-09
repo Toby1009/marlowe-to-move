@@ -582,7 +582,6 @@ export const toolbox = {
       colour: 290,
       contents: [
         { kind: 'block', type: 'contract_root' },
-        { kind: 'block', type: 'extensions_root' },
       ],
     },
     {
@@ -657,15 +656,6 @@ export const toolbox = {
         { kind: 'block', type: 'obs_lt' },
         { kind: 'block', type: 'obs_le' },
         { kind: 'block', type: 'obs_eq' },
-      ],
-    },
-    {
-      kind: 'category',
-      name: 'Extensions',
-      colour: 15,
-      contents: [
-        { kind: 'block', type: 'ext_oracle_requirement' },
-        { kind: 'block', type: 'ext_zkp_requirement' },
       ],
     },
   ],

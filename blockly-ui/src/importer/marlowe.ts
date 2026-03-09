@@ -1,12 +1,13 @@
 import * as Blockly from 'blockly';
 
-type SpecEnvelope = {
+export type SpecEnvelope = {
   contract: any;
   extensions?: any;
 };
 
-export function loadMarloweSpec(workspace: Blockly.Workspace, payload: unknown) {
-  const { contract, extensions } = unwrapPayload(payload);
+export function loadMarloweSpec(workspace: Blockly.Workspace, payload: unknown): SpecEnvelope {
+  const envelope = unwrapMarlowePayload(payload);
+  const { contract } = envelope;
 
   Blockly.Events.disable();
   try {
@@ -15,33 +16,15 @@ export function loadMarloweSpec(workspace: Blockly.Workspace, payload: unknown) 
     const contractRoot = createBlock(workspace, 'contract_root');
     contractRoot.moveBy(40, 40);
     connectValue(contractRoot, 'CONTRACT', buildContractBlock(workspace, contract));
-
-    let extensionsRoot: Blockly.Block | null = null;
-    if (extensions && (Array.isArray(extensions.oracles) || Array.isArray(extensions.zkp))) {
-      extensionsRoot = createBlock(workspace, 'extensions_root');
-      extensionsRoot.moveBy(520, 40);
-
-      const oracleBlocks = (extensions.oracles ?? []).map((item: any) =>
-        buildOracleRequirementBlock(workspace, item)
-      );
-      connectStatementStack(extensionsRoot, 'ORACLES', oracleBlocks);
-
-      const zkpBlocks = (extensions.zkp ?? []).map((item: any) =>
-        buildZkpRequirementBlock(workspace, item)
-      );
-      connectStatementStack(extensionsRoot, 'ZKPS', zkpBlocks);
-    }
-
     renderTree(contractRoot);
-    if (extensionsRoot) {
-      renderTree(extensionsRoot);
-    }
   } finally {
     Blockly.Events.enable();
   }
+
+  return envelope;
 }
 
-function unwrapPayload(payload: unknown): SpecEnvelope {
+export function unwrapMarlowePayload(payload: unknown): SpecEnvelope {
   if (!isRecord(payload)) {
     throw new Error('Preset JSON must be an object.');
   }
@@ -357,58 +340,6 @@ function buildObservationBlock(workspace: Blockly.Workspace, spec: any): Blockly
   throw new Error('Unsupported observation node in importer.');
 }
 
-function buildOracleRequirementBlock(workspace: Blockly.Workspace, spec: any): Blockly.Block {
-  if (!isRecord(spec)) {
-    throw new Error('Unsupported Oracle extension in importer.');
-  }
-  const block = createBlock(workspace, 'ext_oracle_requirement');
-  setFieldIfPresent(block, 'ID', spec.id);
-  setFieldIfPresent(block, 'TYPE', spec.type);
-  setFieldIfPresent(block, 'DESCRIPTION', spec.description);
-  if (isRecord(spec.inputs)) {
-    setFieldIfPresent(block, 'PAIR', spec.inputs.pair);
-    setFieldIfPresent(block, 'FEED_KEY', spec.inputs.feed_key);
-    setFieldIfPresent(block, 'TIMESTAMP', spec.inputs.timestamp);
-    setFieldIfPresent(block, 'MAX_STALENESS_SEC', spec.inputs.max_staleness_sec);
-    setFieldIfPresent(block, 'SOURCE_CHAIN', spec.inputs.source_chain);
-  }
-  if (isRecord(spec.integrity)) {
-    setFieldIfPresent(block, 'SIGNED_BY', joinCsv(spec.integrity.signed_by));
-    setFieldIfPresent(block, 'SIGNATURE_SCHEME', spec.integrity.signature_scheme);
-    setFieldIfPresent(block, 'REQUIRED_QUORUM', spec.integrity.required_quorum);
-  }
-  if (isRecord(spec.bind_to)) {
-    setFieldIfPresent(block, 'BIND_KIND', spec.bind_to.kind);
-    setFieldIfPresent(block, 'BIND_NAME', spec.bind_to.name);
-  }
-  return block;
-}
-
-function buildZkpRequirementBlock(workspace: Blockly.Workspace, spec: any): Blockly.Block {
-  if (!isRecord(spec)) {
-    throw new Error('Unsupported ZKP extension in importer.');
-  }
-  const block = createBlock(workspace, 'ext_zkp_requirement');
-  setFieldIfPresent(block, 'ID', spec.id);
-  setFieldIfPresent(block, 'PROOF_SYSTEM', spec.proof_system);
-  setFieldIfPresent(block, 'STATEMENT', spec.statement);
-  setFieldIfPresent(block, 'PUBLIC_INPUTS', joinCsv(spec.public_inputs));
-  if (isRecord(spec.verifier)) {
-    setFieldIfPresent(block, 'VERIFIER_CHAIN', spec.verifier.chain);
-    setFieldIfPresent(block, 'VERIFIER_MODULE', spec.verifier.module);
-    setFieldIfPresent(block, 'VERIFIER_FUNCTION', spec.verifier.function);
-  }
-  if (isRecord(spec.bind_to)) {
-    setFieldIfPresent(block, 'BIND_KIND', spec.bind_to.kind);
-    setFieldIfPresent(block, 'BIND_NAME', spec.bind_to.name);
-  }
-  if (isRecord(spec.privacy)) {
-    setFieldIfPresent(block, 'REVEALS', joinCsv(spec.privacy.reveals));
-    setFieldIfPresent(block, 'HIDES', joinCsv(spec.privacy.hides));
-  }
-  return block;
-}
-
 function createBlock(workspace: Blockly.Workspace, type: string): Blockly.Block {
   const block = workspace.newBlock(type);
   const rendered = block as Blockly.Block & { initSvg?: () => void };
@@ -449,20 +380,6 @@ function renderTree(root: Blockly.Block) {
     const rendered = block as Blockly.Block & { render?: () => void };
     rendered.render?.();
   }
-}
-
-function joinCsv(value: unknown): string {
-  if (!Array.isArray(value)) {
-    return '';
-  }
-  return value.map((item) => String(item)).join(',');
-}
-
-function setFieldIfPresent(block: Blockly.Block, field: string, value: unknown) {
-  if (value === undefined || value === null) {
-    return;
-  }
-  block.setFieldValue(String(value), field);
 }
 
 function isRecord(value: unknown): value is Record<string, any> {

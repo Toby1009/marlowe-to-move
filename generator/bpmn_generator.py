@@ -928,7 +928,11 @@ class MarloweToBpmnConverter:
         return self._format_time_iso(unix_ts)
 
     def _format_time_iso(self, unix_ts: int) -> str:
-        return datetime.fromtimestamp(unix_ts, timezone.utc).isoformat().replace("+00:00", "Z")
+        return datetime.fromtimestamp(self._normalize_unix_ts(unix_ts), timezone.utc).isoformat().replace("+00:00", "Z")
+
+    def _normalize_unix_ts(self, unix_ts: int) -> float:
+        # Blockly and the repo presets use Unix milliseconds. Accept plain seconds too.
+        return unix_ts / 1000 if unix_ts >= 100_000_000_000 else unix_ts
 
     def _truncate(self, text: str, limit: int = 120) -> str:
         if len(text) <= limit:

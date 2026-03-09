@@ -1,7 +1,5 @@
 import * as Blockly from 'blockly';
 
-const MISSING_BIND_TARGET_VALUE = '__missing_bind_target__';
-
 function requireInput(block: Blockly.Block, name: string): Blockly.Block {
   const target = block.getInputTargetBlock(name);
   if (!target) {
@@ -20,7 +18,7 @@ function collectStack(start: Blockly.Block | null): Blockly.Block[] {
   return out;
 }
 
-export function buildMarloweSpec(workspace: Blockly.Workspace): any {
+export function buildContractSpec(workspace: Blockly.Workspace): any {
   const contractRoot = workspace.getTopBlocks(false).find((b) => b.type === 'contract_root');
   if (!contractRoot) {
     throw new Error('Please add a Contract Root block.');
@@ -29,40 +27,7 @@ export function buildMarloweSpec(workspace: Blockly.Workspace): any {
   if (!contract) {
     throw new Error('Contract Root must contain a Contract block.');
   }
-  const contractSpec = buildContract(contract);
-  const extensionsRoot = workspace.getTopBlocks(false).find((b) => b.type === 'extensions_root');
-  const extensions = buildExtensions(extensionsRoot);
-  if (!extensions) {
-    return contractSpec;
-  }
-  return {
-    contract: contractSpec,
-    extensions,
-  };
-}
-
-function buildExtensions(root: Blockly.Block | undefined): any | null {
-  if (!root) {
-    return null;
-  }
-  const oracleBlocks = collectStack(root.getInputTargetBlock('ORACLES'));
-  const zkpBlocks = collectStack(root.getInputTargetBlock('ZKPS'));
-
-  const oracles = oracleBlocks.map((block) => buildOracleRequirement(block));
-  const zkp = zkpBlocks.map((block) => buildZkpRequirement(block));
-
-  if (oracles.length === 0 && zkp.length === 0) {
-    return null;
-  }
-
-  const extensions: Record<string, any> = {};
-  if (oracles.length > 0) {
-    extensions.oracles = oracles;
-  }
-  if (zkp.length > 0) {
-    extensions.zkp = zkp;
-  }
-  return extensions;
+  return buildContract(contract);
 }
 
 function buildContract(block: Blockly.Block): any {
@@ -301,81 +266,4 @@ function buildObservation(block: Blockly.Block): any {
     default:
       throw new Error(`Unsupported observation block: ${block.type}`);
   }
-}
-
-function buildOracleRequirement(block: Blockly.Block): any {
-  if (block.type !== 'ext_oracle_requirement') {
-    throw new Error(`Expected ext_oracle_requirement, got ${block.type}`);
-  }
-
-  const inputs: Record<string, any> = {
-    timestamp: block.getFieldValue('TIMESTAMP'),
-    max_staleness_sec: Number(block.getFieldValue('MAX_STALENESS_SEC')),
-  };
-  const pair = block.getFieldValue('PAIR').trim();
-  const feedKey = block.getFieldValue('FEED_KEY').trim();
-  const sourceChain = block.getFieldValue('SOURCE_CHAIN').trim();
-  if (pair) {
-    inputs.pair = pair;
-  }
-  if (feedKey) {
-    inputs.feed_key = feedKey;
-  }
-  if (sourceChain) {
-    inputs.source_chain = sourceChain;
-  }
-
-  return {
-    id: block.getFieldValue('ID').trim(),
-    type: block.getFieldValue('TYPE'),
-    description: block.getFieldValue('DESCRIPTION').trim(),
-    inputs,
-    integrity: {
-      signed_by: splitCsv(block.getFieldValue('SIGNED_BY')),
-      signature_scheme: block.getFieldValue('SIGNATURE_SCHEME').trim(),
-      required_quorum: Number(block.getFieldValue('REQUIRED_QUORUM')),
-    },
-    bind_to: buildBinding(block),
-  };
-}
-
-function buildZkpRequirement(block: Blockly.Block): any {
-  if (block.type !== 'ext_zkp_requirement') {
-    throw new Error(`Expected ext_zkp_requirement, got ${block.type}`);
-  }
-
-  return {
-    id: block.getFieldValue('ID').trim(),
-    statement: block.getFieldValue('STATEMENT').trim(),
-    public_inputs: splitCsv(block.getFieldValue('PUBLIC_INPUTS')),
-    proof_system: block.getFieldValue('PROOF_SYSTEM'),
-    verifier: {
-      chain: block.getFieldValue('VERIFIER_CHAIN').trim(),
-      module: block.getFieldValue('VERIFIER_MODULE').trim(),
-      function: block.getFieldValue('VERIFIER_FUNCTION').trim(),
-    },
-    bind_to: buildBinding(block),
-    privacy: {
-      reveals: splitCsv(block.getFieldValue('REVEALS')),
-      hides: splitCsv(block.getFieldValue('HIDES')),
-    },
-  };
-}
-
-function buildBinding(block: Blockly.Block): any {
-  const name = block.getFieldValue('BIND_NAME').trim();
-  if (!name || name === MISSING_BIND_TARGET_VALUE) {
-    throw new Error('Extensions must bind to a ChoiceId name defined in Contract Root.');
-  }
-  return {
-    kind: block.getFieldValue('BIND_KIND'),
-    name,
-  };
-}
-
-function splitCsv(value: string): string[] {
-  return value
-    .split(',')
-    .map((item) => item.trim())
-    .filter((item) => item.length > 0);
 }
