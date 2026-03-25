@@ -107,6 +107,12 @@ app.innerHTML = `
       <div class="bpmn-toolbar">
         <a id="download-bpmn" class="download-link hidden" download="contract.bpmn">Download .bpmn</a>
         <a id="download-svg" class="download-link hidden" download="contract.svg">Download .svg</a>
+        <div class="bpmn-zoom-controls">
+          <button id="btn-bpmn-zoom-out" class="secondary" type="button" aria-label="Zoom out BPMN">-</button>
+          <button id="btn-bpmn-zoom-reset" class="secondary" type="button">100%</button>
+          <button id="btn-bpmn-zoom-in" class="secondary" type="button" aria-label="Zoom in BPMN">+</button>
+          <span id="bpmn-zoom-label" class="bpmn-zoom-label">100%</span>
+        </div>
       </div>
       <div id="bpmn-meta" class="hint">Generate BPMN to preview the flow diagram.</div>
       <div id="bpmn-diagram" class="bpmn-diagram empty">No BPMN generated yet.</div>
@@ -119,7 +125,15 @@ app.innerHTML = `
   <div id="bpmn-lightbox" class="bpmn-lightbox hidden">
     <div id="bpmn-lightbox-backdrop" class="bpmn-lightbox-backdrop">
       <div id="bpmn-lightbox-content" class="bpmn-lightbox-content">
-        <div class="bpmn-lightbox-hint">Click outside the diagram to close</div>
+        <div class="bpmn-lightbox-toolbar">
+          <div class="bpmn-lightbox-hint">Click outside the diagram to close</div>
+          <div class="bpmn-zoom-controls">
+            <button id="btn-bpmn-lightbox-zoom-out" class="secondary" type="button" aria-label="Zoom out BPMN">-</button>
+            <button id="btn-bpmn-lightbox-zoom-reset" class="secondary" type="button">100%</button>
+            <button id="btn-bpmn-lightbox-zoom-in" class="secondary" type="button" aria-label="Zoom in BPMN">+</button>
+            <span id="bpmn-lightbox-zoom-label" class="bpmn-zoom-label">100%</span>
+          </div>
+        </div>
         <div id="bpmn-lightbox-diagram" class="bpmn-lightbox-diagram"></div>
       </div>
     </div>
@@ -173,6 +187,10 @@ const bpmnMetaEl = document.getElementById('bpmn-meta') as HTMLDivElement;
 const bpmnXmlPreviewEl = document.getElementById('bpmn-xml-preview') as HTMLPreElement;
 const downloadBpmnEl = document.getElementById('download-bpmn') as HTMLAnchorElement;
 const downloadSvgEl = document.getElementById('download-svg') as HTMLAnchorElement;
+const bpmnZoomOutEl = document.getElementById('btn-bpmn-zoom-out') as HTMLButtonElement;
+const bpmnZoomResetEl = document.getElementById('btn-bpmn-zoom-reset') as HTMLButtonElement;
+const bpmnZoomInEl = document.getElementById('btn-bpmn-zoom-in') as HTMLButtonElement;
+const bpmnZoomLabelEl = document.getElementById('bpmn-zoom-label') as HTMLSpanElement;
 const tabJsonEl = document.getElementById('tab-json') as HTMLButtonElement;
 const tabBpmnDiagramEl = document.getElementById('tab-bpmn-diagram') as HTMLButtonElement;
 const tabBpmnXmlEl = document.getElementById('tab-bpmn-xml') as HTMLButtonElement;
@@ -183,6 +201,10 @@ const bpmnLightboxEl = document.getElementById('bpmn-lightbox') as HTMLDivElemen
 const bpmnLightboxBackdropEl = document.getElementById('bpmn-lightbox-backdrop') as HTMLDivElement;
 const bpmnLightboxContentEl = document.getElementById('bpmn-lightbox-content') as HTMLDivElement;
 const bpmnLightboxDiagramEl = document.getElementById('bpmn-lightbox-diagram') as HTMLDivElement;
+const bpmnLightboxZoomOutEl = document.getElementById('btn-bpmn-lightbox-zoom-out') as HTMLButtonElement;
+const bpmnLightboxZoomResetEl = document.getElementById('btn-bpmn-lightbox-zoom-reset') as HTMLButtonElement;
+const bpmnLightboxZoomInEl = document.getElementById('btn-bpmn-lightbox-zoom-in') as HTMLButtonElement;
+const bpmnLightboxZoomLabelEl = document.getElementById('bpmn-lightbox-zoom-label') as HTMLSpanElement;
 
 let bpmnBlobUrls: string[] = [];
 let extensionsState: ExtensionsState = emptyExtensionsState();
@@ -190,6 +212,11 @@ let currentSpecCacheKey = '';
 let lastGeneratedBpmnCacheKey = '';
 let lastGeneratedBpmnProcessName = '';
 let lastGeneratedBpmnResult: BpmnResult | null = null;
+let bpmnZoom = 1;
+
+const BPMN_ZOOM_MIN = 0.5;
+const BPMN_ZOOM_MAX = 2.5;
+const BPMN_ZOOM_STEP = 0.1;
 
 const presetNames = Object.keys(PRESET_SPECS) as PresetName[];
 for (const name of presetNames) {
@@ -349,6 +376,88 @@ function clearBlobUrls() {
   bpmnBlobUrls = [];
 }
 
+function getBpmnSvg(container: HTMLElement): SVGSVGElement | null {
+  return container.querySelector('svg');
+}
+
+function hasBpmnSvg() {
+  return getBpmnSvg(bpmnDiagramEl) !== null;
+}
+
+function clampBpmnZoom(value: number) {
+  return Math.min(BPMN_ZOOM_MAX, Math.max(BPMN_ZOOM_MIN, value));
+}
+
+function ensureBpmnSvgBaseSize(svg: SVGSVGElement) {
+  if (svg.dataset.baseWidth && svg.dataset.baseHeight) {
+    return;
+  }
+
+  const widthAttr = Number(svg.getAttribute('width'));
+  const heightAttr = Number(svg.getAttribute('height'));
+  const viewBox = svg.viewBox.baseVal;
+  const baseWidth = Number.isFinite(widthAttr) && widthAttr > 0 ? widthAttr : viewBox?.width || 0;
+  const baseHeight = Number.isFinite(heightAttr) && heightAttr > 0 ? heightAttr : viewBox?.height || 0;
+
+  if (baseWidth > 0) {
+    svg.dataset.baseWidth = String(baseWidth);
+  }
+  if (baseHeight > 0) {
+    svg.dataset.baseHeight = String(baseHeight);
+  }
+}
+
+function applyZoomToContainer(container: HTMLElement) {
+  const svg = getBpmnSvg(container);
+  if (!svg) {
+    return;
+  }
+
+  ensureBpmnSvgBaseSize(svg);
+  const baseWidth = Number(svg.dataset.baseWidth);
+  const baseHeight = Number(svg.dataset.baseHeight);
+
+  if (baseWidth > 0) {
+    svg.style.width = `${Math.round(baseWidth * bpmnZoom)}px`;
+  }
+  if (baseHeight > 0) {
+    svg.style.height = `${Math.round(baseHeight * bpmnZoom)}px`;
+  }
+}
+
+function syncBpmnZoomUi() {
+  const percent = `${Math.round(bpmnZoom * 100)}%`;
+  bpmnZoomLabelEl.textContent = percent;
+  bpmnLightboxZoomLabelEl.textContent = percent;
+
+  const disabled = !hasBpmnSvg();
+  for (const button of [
+    bpmnZoomOutEl,
+    bpmnZoomResetEl,
+    bpmnZoomInEl,
+    bpmnLightboxZoomOutEl,
+    bpmnLightboxZoomResetEl,
+    bpmnLightboxZoomInEl,
+  ]) {
+    button.disabled = disabled;
+  }
+}
+
+function renderBpmnZoom() {
+  applyZoomToContainer(bpmnDiagramEl);
+  applyZoomToContainer(bpmnLightboxDiagramEl);
+  syncBpmnZoomUi();
+}
+
+function setBpmnZoom(nextZoom: number) {
+  bpmnZoom = clampBpmnZoom(nextZoom);
+  renderBpmnZoom();
+}
+
+function adjustBpmnZoom(delta: number) {
+  setBpmnZoom(Number((bpmnZoom + delta).toFixed(2)));
+}
+
 function setActiveTab(tab: 'json' | 'bpmn-diagram' | 'bpmn-xml') {
   const mapping = [
     [tabJsonEl, panelJsonEl, 'json'],
@@ -372,6 +481,7 @@ function openBpmnLightbox() {
     return;
   }
   bpmnLightboxDiagramEl.innerHTML = bpmnDiagramEl.innerHTML;
+  renderBpmnZoom();
   bpmnLightboxEl.classList.remove('hidden');
 }
 
@@ -390,6 +500,7 @@ function invalidateBpmn(message = 'BPMN preview is stale. Generate BPMN again.')
   lastGeneratedBpmnResult = null;
   lastGeneratedBpmnCacheKey = '';
   lastGeneratedBpmnProcessName = '';
+  syncBpmnZoomUi();
 }
 
 function syncJsonText(spec: unknown) {
@@ -704,6 +815,7 @@ function applyBpmnResult(result: BpmnResult, processName: string) {
   if (!bpmnLightboxEl.classList.contains('hidden')) {
     bpmnLightboxDiagramEl.innerHTML = result.svg;
   }
+  renderBpmnZoom();
 
   const warnings = result.warnings.length > 0 ? ` Warnings: ${result.warnings.join(' | ')}` : '';
   bpmnMetaEl.textContent = result.valid
@@ -760,6 +872,24 @@ oracleListEl.addEventListener('click', (event) => {
 bpmnDiagramEl.addEventListener('click', () => {
   openBpmnLightbox();
 });
+
+for (const button of [bpmnZoomOutEl, bpmnLightboxZoomOutEl]) {
+  button.addEventListener('click', () => {
+    adjustBpmnZoom(-BPMN_ZOOM_STEP);
+  });
+}
+
+for (const button of [bpmnZoomInEl, bpmnLightboxZoomInEl]) {
+  button.addEventListener('click', () => {
+    adjustBpmnZoom(BPMN_ZOOM_STEP);
+  });
+}
+
+for (const button of [bpmnZoomResetEl, bpmnLightboxZoomResetEl]) {
+  button.addEventListener('click', () => {
+    setBpmnZoom(1);
+  });
+}
 
 bpmnLightboxBackdropEl.addEventListener('click', () => {
   closeBpmnLightbox();
@@ -911,4 +1041,5 @@ saveBtn.addEventListener('click', async () => {
 
 setExtensionsState(emptyExtensionsState());
 invalidateBpmn('Generate BPMN to preview the flow diagram.');
+syncBpmnZoomUi();
 generateJson();

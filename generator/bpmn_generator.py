@@ -73,14 +73,14 @@ ET.register_namespace("di", DI_NS)
 ET.register_namespace("xsi", XSI_NS)
 
 NODE_SIZES = {
-    "startEvent": (36, 36),
-    "endEvent": (36, 36),
-    "intermediateCatchEvent": (36, 36),
-    "serviceTask": (120, 80),
-    "scriptTask": (120, 80),
-    "receiveTask": (120, 80),
-    "exclusiveGateway": (50, 50),
-    "eventBasedGateway": (50, 50),
+    "startEvent": (44, 44),
+    "endEvent": (44, 44),
+    "intermediateCatchEvent": (44, 44),
+    "serviceTask": (180, 96),
+    "scriptTask": (180, 96),
+    "receiveTask": (180, 96),
+    "exclusiveGateway": (64, 64),
+    "eventBasedGateway": (64, 64),
 }
 
 
@@ -131,12 +131,18 @@ class BpmnLane:
 
 
 class MarloweToBpmnConverter:
-    H_STEP = 220
-    V_STEP = 160
+    H_STEP = 260
+    V_STEP = 180
     LANE_HEADER_WIDTH = 160
-    LANE_PADDING_Y = 40
-    LANE_ROW_STEP = 110
+    LANE_PADDING_Y = 48
+    LANE_ROW_STEP = 140
     POOL_MARGIN = 40
+    LANE_LABEL_FONT_SIZE = 18
+    NODE_LABEL_FONT_SIZE = 14
+    NODE_LABEL_LINE_HEIGHT = 20
+    EXTERNAL_LABEL_GAP = 22
+    INTERNAL_LABEL_WRAP = 24
+    EXTERNAL_LABEL_WRAP = 18
 
     def __init__(self) -> None:
         self._node_counter = 0
@@ -396,9 +402,9 @@ class MarloweToBpmnConverter:
                 "text",
                 {
                     "x": str(self.participant_bounds["x"] + 18),
-                    "y": str(lane.y + 28),
+                    "y": str(lane.y + 34),
                     "font-family": "monospace",
-                    "font-size": "16",
+                    "font-size": str(self.LANE_LABEL_FONT_SIZE),
                     "font-weight": "700",
                     "fill": "#0f172a",
                 },
@@ -690,7 +696,7 @@ class MarloweToBpmnConverter:
                 180,
                 (self.LANE_PADDING_Y * 2)
                 + (max(0, len(row_positions) - 1) * self.LANE_ROW_STEP)
-                + max((node.height for node in lane_nodes), default=80),
+                + max((self._node_visual_height(node) for node in lane_nodes), default=96),
             )
             lane_top = current_y
             lanes.append(
@@ -707,7 +713,7 @@ class MarloweToBpmnConverter:
                 node.y = lane_top + self.LANE_PADDING_Y + (row_index * self.LANE_ROW_STEP)
             current_y += lane_height
 
-        max_right_x = max(node.right_x for node in self.nodes.values())
+        max_right_x = max(self._node_visual_right_x(node) for node in self.nodes.values())
         self.lanes = lanes
         self.participant_bounds = {
             "x": self.POOL_MARGIN,
@@ -772,7 +778,7 @@ class MarloweToBpmnConverter:
                     {
                         "cx": str(center_x),
                         "cy": str(center_y),
-                        "r": str(max(1, radius - 5)),
+                        "r": str(max(1, radius - 6)),
                         "fill": "none",
                         "stroke": "#0f172a",
                         "stroke-width": "1.5",
@@ -812,22 +818,59 @@ class MarloweToBpmnConverter:
                 },
             )
 
-        lines = self._wrap_text(node.name, 22)
-        text_y = center_y - ((len(lines) - 1) * 9)
-        for index, line in enumerate(lines[:4]):
+        lines = self._node_label_lines(node)
+        if self._use_external_label(node):
+            text_y = node.y + node.height + self.EXTERNAL_LABEL_GAP
+        else:
+            first_baseline_offset = (len(lines) - 1) * (self.NODE_LABEL_LINE_HEIGHT // 2)
+            text_y = center_y - first_baseline_offset
+            if len(lines) == 1:
+                text_y += self.NODE_LABEL_FONT_SIZE // 2
+
+        for index, line in enumerate(lines):
             text = ET.SubElement(
                 group,
                 "text",
                 {
                     "x": str(center_x),
-                    "y": str(text_y + (index * 18)),
+                    "y": str(text_y + (index * self.NODE_LABEL_LINE_HEIGHT)),
                     "text-anchor": "middle",
                     "font-family": "monospace",
-                    "font-size": "12",
+                    "font-size": str(self.NODE_LABEL_FONT_SIZE),
+                    "font-weight": "600",
                     "fill": "#0f172a",
                 },
             )
             text.text = line
+
+    def _use_external_label(self, node: BpmnNode) -> bool:
+        return node.tag in {
+            "startEvent",
+            "endEvent",
+            "intermediateCatchEvent",
+            "exclusiveGateway",
+            "eventBasedGateway",
+        }
+
+    def _node_label_lines(self, node: BpmnNode) -> List[str]:
+        wrap = self.EXTERNAL_LABEL_WRAP if self._use_external_label(node) else self.INTERNAL_LABEL_WRAP
+        return self._wrap_text(node.name, wrap)[:4]
+
+    def _node_visual_height(self, node: BpmnNode) -> int:
+        if not self._use_external_label(node):
+            return node.height
+        return node.height + self.EXTERNAL_LABEL_GAP + (len(self._node_label_lines(node)) * self.NODE_LABEL_LINE_HEIGHT)
+
+    def _node_visual_right_x(self, node: BpmnNode) -> int:
+        if not self._use_external_label(node):
+            return node.right_x
+        label_width = self._estimate_label_width(node)
+        center_x = node.x + (node.width // 2)
+        return max(node.right_x, center_x + (label_width // 2) + 12)
+
+    def _estimate_label_width(self, node: BpmnNode) -> int:
+        max_chars = max((len(line) for line in self._node_label_lines(node)), default=0)
+        return int(max_chars * self.NODE_LABEL_FONT_SIZE * 0.72)
 
     def _wrap_text(self, text: str, max_len: int) -> List[str]:
         words = text.split()
